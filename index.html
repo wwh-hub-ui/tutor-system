@@ -5,15 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>家教管理系统</title>
 <style>
-:root{--primary:#4F6EF7;--bg:#F5F6FA;--card:#fff;--text:#1C1C1E;--sub:#6E6E73;--radius:16px;--shadow:0 2px 12px rgba(0,0,0,0.06)}
+:root{--primary:#4F6EF7;--bg:#F5F6FA;--card:#fff;--text:#1C1C1E;--sub:#6E6E73;--radius:16px;--shadow:0 2px 12px rgba(0,0,0,0.06);--green:#34C759}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .container{max-width:500px;width:100%}
 .header{text-align:center;margin-bottom:32px}
 .header h1{font-size:28px;color:var(--primary);margin-bottom:8px}
 .header p{color:var(--sub);font-size:14px}
+.section-title{font-size:13px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;margin-top:10px}
 .card{background:var(--card);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow);text-decoration:none;display:block;color:var(--text);transition:transform 0.2s,box-shadow 0.2s;cursor:pointer}
 .card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.card.parent{border-left:4px solid var(--green)}
+.card.teacher{border-left:4px solid var(--primary)}
 .card .icon{font-size:32px;margin-bottom:12px}
 .card h2{font-size:18px;margin-bottom:4px}
 .card p{color:var(--sub);font-size:13px;line-height:1.5}
@@ -26,19 +29,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 <h1>📚 家教管理系统</h1>
 <p>苏州小学 · 课外辅导智能工具集</p>
 </div>
-<a href="家教/public/index.html" class="card">
+<div class="section-title">👨‍👩‍👧 家长入口</div>
+<a href="家教/public/parent.html" class="card parent">
 <div class="icon">📝</div>
-<h2>预评估系统</h2>
-<p>家长填写学情问卷，老师实时查看评估结果，提前备课</p>
-<span class="badge">家长 + 教师</span>
+<h2>学情评估问卷</h2>
+<p>请填写孩子的学情信息，帮助老师提前备课</p>
+<span class="badge" style="background:#D1FAE5;color:#065F46;">仅限评估</span>
 </a>
-<a href="家教二/public/index.html" class="card">
+<div class="section-title">👩‍🏫 教师入口</div>
+<a href="家教/public/index.html" class="card teacher">
 <div class="icon">📋</div>
+<h2>预评估系统</h2>
+<p>查看家长提交的评估结果，按年级筛选</p>
+<span class="badge">教师专用</span>
+</a>
+<a href="家教二/public/index.html" class="card teacher">
+<div class="icon">🤖</div>
 <h2>教学管理</h2>
 <p>AI 生成个性化教案、教学反馈、智能提醒</p>
 <span class="badge">教师专用</span>
 </a>
-<a href="家教三/public/index.html" class="card">
+<a href="家教三/public/index.html" class="card teacher">
 <div class="icon">💰</div>
 <h2>财务中心</h2>
 <p>收支记录、储蓄目标、AI 周报总结与财富日记</p>
