@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>验证身份</title>
+<style>
+:root{--primary:#4F6EF7;--bg:#F5F6FA;--card:#fff;--text:#1C1C1E;--sub:#6E6E73;--radius:16px;--shadow:0 2px 12px rgba(0,0,0,0.06);--danger:#FF3B30}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.container{max-width:400px;width:100%}
+.card{background:var(--card);border-radius:var(--radius);padding:32px 24px;box-shadow:var(--shadow);text-align:center}
+.lock{font-size:48px;margin-bottom:16px}
+h1{font-size:20px;margin-bottom:8px;color:var(--text)}
+p{color:var(--sub);font-size:13px;margin-bottom:24px}
+input{width:100%;padding:12px 14px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:15px;text-align:center;font-family:inherit;letter-spacing:2px}
+input:focus{outline:none;border-color:var(--primary)}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 40px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;background:var(--primary);color:#fff;width:100%}
+.btn:hover{background:#3D5CE5}
+.error{color:var(--danger);font-size:12px;margin-top:8px;display:none}
+.error.show{display:block}
+#portal{display:none}
+.section-title{font-size:13px;font-weight:600;color:var(--sub);letter-spacing:1px;margin-bottom:10px;margin-top:20px;text-align:left}
+.tcard{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:12px;box-shadow:var(--shadow);text-decoration:none;display:block;color:var(--text);transition:transform 0.2s;cursor:pointer;border-left:4px solid var(--primary);text-align:left}
+.tcard:hover{transform:translateY(-2px)}
+.tcard .icon{font-size:28px;margin-bottom:8px}
+.tcard h2{font-size:16px;margin-bottom:2px}
+.tcard p{color:var(--sub);font-size:12px;margin-bottom:0}
+</style>
+</head>
+<body>
+<div class="container">
+<div id="gate" class="card">
+<div class="lock">🔒</div>
+<h1>教师入口</h1>
+<p>请输入密码以访问管理后台</p>
+<input type="password" id="pwd" placeholder="请输入密码" onkeydown="if(event.key==='Enter')check()">
+<button class="btn" onclick="check()">验证进入</button>
+<div class="error" id="err">密码错误，请重试</div>
+</div>
+<div id="portal">
+<div class="card" style="text-align:left;margin-bottom:20px">
+<div style="font-size:14px;color:var(--sub);margin-bottom:12px">✅ 验证通过 · 教师管理后台</div>
+<div class="section-title">工具导航</div>
+<a href="家教/public/index.html" class="tcard">
+<div class="icon">📋</div><h2>预评估系统</h2><p>查看家长提交的评估结果，按年级筛选</p>
+</a>
+<a href="家教二/public/index.html" class="tcard">
+<div class="icon">🤖</div><h2>教学管理</h2><p>AI 生成个性化教案、教学反馈、智能提醒</p>
+</a>
+<a href="家教三/public/index.html" class="tcard">
+<div class="icon">💰</div><h2>财务中心</h2><p>收支记录、储蓄目标、AI 周报总结</p>
+</a>
+</div>
+</div>
+</div>
+<script>
+function check(){
+var v=document.getElementById('pwd').value;
+if(btoa(v)==='d2h3MjAyNA=='){
+document.getElementById('gate').style.display='none';
+document.getElementById('portal').style.display='block';
+sessionStorage.setItem('_t',btoa(v));
+}else{
+document.getElementById('err').classList.add('show');
+document.getElementById('pwd').value='';
+}
+}
+(function(){
+if(sessionStorage.getItem('_t')==='d2h3MjAyNA=='){
+document.getElementById('gate').style.display='none';
+document.getElementById('portal').style.display='block';
+}
+})();
+</script>
+</body>
+</html>
