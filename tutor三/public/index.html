@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家教三 · 财务中心</title>
+<style>
+:root {
+  --pink:#EC4899; --blue:#6366F1; --green:#10B981; --yellow:#F59E0B; --red:#EF4444;
+  --bg:#FFF5F7; --card:#FFFFFF; --text:#1E293B; --text2:#64748B;
+  --border:#F1E0E4; --radius:16px; --shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px;}
+
+.header{text-align:center;margin-bottom:24px;}
+.header h1{font-size:24px;font-weight:800;}
+.header .date{font-size:12px;color:var(--text2);}
+
+/* Grid layout */
+.dashboard{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.dashboard .full{grid-column:1/-1;}
+
+/* Piggy bank */
+.piggy-box{text-align:center;padding:20px;}
+.piggy-box svg{width:100px;height:110px;}
+.piggy-box .big-num{font-size:36px;font-weight:800;color:var(--pink);margin-top:8px;}
+.piggy-box .big-label{font-size:12px;color:var(--text2);}
+
+/* Stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px;}
+.stat-card{text-align:center;padding:14px 8px;border-radius:12px;}
+.stat-card .stat-icon{font-size:28px;margin-bottom:4px;}
+.stat-card .stat-num{font-size:22px;font-weight:700;}
+.stat-card .stat-label{font-size:11px;color:var(--text2);}
+.stat-card.tutor{background:#EEF2FF;}
+.stat-card.tutor .stat-num{color:var(--blue);}
+.stat-card.coffee{background:#FEF3C7;}
+.stat-card.coffee .stat-num{color:var(--yellow);}
+.stat-card.net{background:#D1FAE5;}
+.stat-card.net .stat-num{color:var(--green);}
+
+/* Card base */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.card-header{padding:14px 18px;font-size:14px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+
+/* Tug of war */
+.tug-war{padding:16px 18px;}
+.tug-bar{height:32px;border-radius:16px;display:flex;overflow:hidden;margin-bottom:8px;}
+.tug-bar .tug-tutor{background:var(--blue);transition:width 0.5s;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;min-width:0;}
+.tug-bar .tug-coffee{background:var(--yellow);transition:width 0.5s;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;min-width:0;}
+.tug-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);}
+.tug-winner{text-align:center;font-size:13px;font-weight:700;margin-top:6px;}
+
+/* Week calendar */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:16px;}
+.day-cell{text-align:center;padding:8px 2px;border-radius:10px;background:#F8FAFC;min-height:72px;cursor:pointer;transition:0.2s;position:relative;}
+.day-cell:hover{background:#EEF2FF;}
+.day-cell.today{border:2px solid var(--pink);}
+.day-cell .dow{font-size:10px;color:var(--text2);margin-bottom:2px;}
+.day-cell .day-num{font-size:18px;font-weight:700;}
+.day-cell .tag{font-size:9px;font-weight:700;padding:1px 4px;border-radius:4px;margin-top:2px;}
+.day-cell .tag.tutor{background:#EEF2FF;color:var(--blue);}
+.day-cell .tag.coffee{background:#FEF3C7;color:#B45309;}
+.day-cell .tag.rest{color:var(--text2);}
+.day-cell .tag.amount{font-size:10px;margin-top:1px;}
+
+/* Prediction */
+.pred-box{padding:18px;text-align:center;}
+.pred-box .pred-num{font-size:28px;font-weight:800;color:var(--purple, #8B5CF6);}
+.pred-box .pred-trend{font-size:12px;margin-top:4px;}
+.pred-box .pred-trend.up{color:var(--green);}
+.pred-box .pred-trend.down{color:var(--red);}
+
+/* Student cards */
+.student-cards{display:flex;gap:10px;padding:16px;overflow-x:auto;}
+.stu-card{min-width:150px;border-radius:12px;padding:14px;background:linear-gradient(135deg,#EEF2FF,#FCE7F3);text-align:center;cursor:pointer;transition:0.2s;border:2px solid transparent;}
+.stu-card:hover{transform:translateY(-2px);border-color:var(--blue);}
+.stu-card .stu-emoji{font-size:32px;}
+.stu-card .stu-name{font-size:14px;font-weight:700;margin:4px 0;}
+.stu-card .stu-stat{font-size:11px;color:var(--text2);}
+.stu-card .stu-net{font-size:16px;font-weight:800;color:var(--green);margin-top:4px;}
+.stu-card .stu-stars{font-size:14px;margin-top:2px;}
+
+/* Quick actions */
+.actions{padding:16px 18px;display:flex;gap:10px;flex-wrap:wrap;}
+.btn{padding:10px 18px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:0.2s;}
+.btn-pink{background:var(--pink);color:#fff;}
+.btn-pink:hover{background:#DB2777;}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-blue:hover{background:#4F46E5;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#059669;}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text);}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px;}
+.btn-clear{background:var(--red);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;width:100%;}
+.btn-clear:hover{background:#DC2626;}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--card);border-radius:var(--radius);padding:24px;max-width:420px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,0.15);}
+.modal-box h2{font-size:18px;margin-bottom:16px;}
+.modal-box .form-group{margin-bottom:14px;}
+.modal-box label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;}
+.modal-box input,.modal-box select,.modal-box textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;}
+.modal-box input:focus,.modal-box select:focus{outline:none;border-color:var(--pink);}
+.modal-box .emoji-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.modal-box .emoji-picker span{font-size:20px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:0.2s;}
+.modal-box .emoji-picker span:hover{background:var(--bg);}
+.modal-box .emoji-picker span.sel{background:#EEF2FF;}
+
+/* Summary box */
+.summary-box{padding:16px 18px;font-size:13px;line-height:1.8;color:var(--text2);background:linear-gradient(135deg,#FEF3C7,#EEF2FF);border-radius:12px;margin:16px 18px;}
+.summary-box .copy-btn{float:right;}
+
+/* Confetti */
+
+/* Wealth diary */
+.diary-card{padding:18px;position:relative;}
+.diary-card .diary-date{font-size:11px;color:var(--text2);margin-bottom:6px;}
+.diary-card .diary-text{font-size:14px;line-height:1.8;color:var(--text);position:relative;padding-left:16px;border-left:3px solid var(--pink);}
+.diary-card .diary-actions{margin-top:10px;}
+
+/* Milestones */
+.milestone-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 16px;}
+.milestone-item{text-align:center;padding:10px 6px;border-radius:10px;background:#F8FAFC;transition:0.3s;}
+.milestone-item.unlocked{background:linear-gradient(135deg,#FEF3C7,#FCE7F3);animation:pulse 2s infinite;}
+.milestone-item .ms-icon{font-size:24px;margin-bottom:2px;}
+.milestone-item .ms-title{font-size:11px;font-weight:700;color:var(--text);}
+.milestone-item .ms-date{font-size:9px;color:var(--text2);margin-top:2px;}
+.milestone-item.locked{opacity:0.4;filter:grayscale(1);}
+.milestone-item.locked .ms-title{color:var(--text2);}
+
+/* Timeline */
+.timeline{padding:12px 18px;max-height:280px;overflow-y:auto;}
+.tl-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border);align-items:center;}
+.tl-item:last-child{border-bottom:none;}
+.tl-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.tl-icon.income{background:#D1FAE5;color:var(--green);}
+.tl-icon.expense{background:#FEE2E2;color:var(--red);}
+.tl-icon.goal{background:#FEF3C7;color:var(--yellow);}
+.tl-info{flex:1;min-width:0;}
+.tl-info .tl-label{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-info .tl-time{font-size:10px;color:var(--text2);}
+.tl-amount{font-size:14px;font-weight:700;flex-shrink:0;}
+.tl-amount.plus{color:var(--green);}
+.tl-amount.minus{color:var(--red);}
+
+/* Week compare */
+.compare-row{display:flex;gap:16px;padding:12px 18px;}
+.compare-side{flex:1;text-align:center;}
+.compare-side .cs-label{font-size:10px;color:var(--text2);}
+.compare-side .cs-num{font-size:22px;font-weight:800;}
+.compare-side .cs-num.up{color:var(--green);}
+.compare-side .cs-num.down{color:var(--red);}
+.compare-vs{display:flex;align-items:center;font-size:13px;font-weight:700;color:var(--text2);}
+
+
+/* Health report */
+.health-card{padding:16px 18px;}
+.health-overall{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:14px;border-radius:14px;background:linear-gradient(135deg,#ECFDF5,#F0F9FF);}
+.health-grade{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;flex-shrink:0;}
+.health-grade.A{background:#D1FAE5;color:#059669;}
+.health-grade.B{background:#FEF3C7;color:#D97706;}
+.health-grade.C{background:#FEE2E2;color:#DC2626;}
+.health-summary{font-size:13px;color:var(--text);line-height:1.6;}
+.health-metrics{}
+.health-metric{display:flex;align-items:center;gap:10px;padding:8px 0;}
+.health-metric+.health-metric{border-top:1px solid var(--border);}
+.hm-icon{font-size:18px;width:24px;text-align:center;}
+.hm-info{flex:1;min-width:0;}
+.hm-name{font-size:12px;font-weight:600;}
+.hm-desc{font-size:10px;color:var(--text2);}
+.hm-bar{width:90px;height:8px;border-radius:4px;background:#F1F5F9;overflow:hidden;flex-shrink:0;}
+.hm-fill{height:100%;border-radius:4px;transition:width 0.6s;}
+.hm-fill.A{background:var(--green);}
+.hm-fill.B{background:var(--yellow);}
+.hm-fill.C{background:var(--red);}
+.hm-grade{font-size:13px;font-weight:800;width:24px;text-align:center;flex-shrink:0;}
+.hm-grade.A{color:var(--green);}
+.hm-grade.B{color:var(--yellow);}
+.hm-grade.C{color:var(--red);}
+
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.03);}}
+
+@keyframes confetti-fall{0%{transform:translateY(-100px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+.confetti{position:fixed;z-index:200;pointer-events:none;font-size:24px;animation:confetti-fall 2s ease-in forwards;}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;color:#fff;font-weight:700;font-size:14px;z-index:200;opacity:0;transition:opacity 0.3s;}
+.toast.show{opacity:1;}
+.toast.success{background:var(--green);}
+.toast.error{background:var(--red);}
+
+@media(max-width:640px){
+  .dashboard{grid-template-columns:1fr;}
+  .stat-row{grid-template-columns:repeat(3,1fr);}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<!-- PASSWORD GATE -->
+<div id="auth-gate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#FFF5F7;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif">
+<div style="background:#fff;border-radius:16px;padding:32px 24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;max-width:400px;width:100%">
+<div style="font-size:48px;margin-bottom:16px">🔒</div>
+<h1 style="font-size:20px;margin-bottom:8px;color:#1E293B">教师验证</h1>
+<p style="color:#64748B;font-size:13px;margin-bottom:24px">请输入密码以访问此页面</p>
+<input type="password" id="auth-pwd" placeholder="请输入密码" style="width:100%;padding:12px 14px;border:1.5px solid #F1E0E4;border-radius:10px;font-size:15px;text-align:center;letter-spacing:2px" onkeydown="if(event.key==='Enter')authCheck()">
+<button onclick="authCheck()" style="display:block;width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;background:#EC4899;color:#fff">验证进入</button>
+<div id="auth-err" style="color:#EF4444;font-size:12px;margin-top:8px;display:none">密码错误，请重试</div>
+</div></div>
+<script>
+(function(){if(sessionStorage.getItem('_t')==='d2h3MjAyNA=='){document.getElementById('auth-gate').style.display='none'}})();
+function authCheck(){var v=document.getElementById('auth-pwd').value;if(btoa(v)==='d2h3MjAyNA=='){document.getElementById('auth-gate').style.display='none';sessionStorage.setItem('_t',btoa(v))}else{document.getElementById('auth-err').style.display='block';document.getElementById('auth-pwd').value=''}}
+</script>
+<!-- END PASSWORD GATE -->
+<div class="header">
+  <h1>🐷 家教三 · 我的小账本</h1>
+  <div class="date" id="today-date"></div>
+</div>
+
+<div class="dashboard">
+  <!-- Piggy + Top stats -->
+  <div class="card full">
+    <div class="piggy-box">
+      <div id="piggy-svg"></div>
+      <div class="big-num" id="month-income">¥0</div>
+      <div class="big-label">本月总收入</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card tutor"><div class="stat-icon">📚</div><div class="stat-num" id="tutor-income">¥0</div><div class="stat-label">家教收入</div></div>
+      <div class="stat-card coffee"><div class="stat-icon">☕</div><div class="stat-num" id="sb-income">¥0</div><div class="stat-label">星巴克兼职</div></div>
+      <div class="stat-card net"><div class="stat-icon">🤑</div><div class="stat-num" id="net-income">¥0</div><div class="stat-label">净结余</div></div>
+    </div>
+  </div>
+
+  <!-- Wealth Diary -->
+  <div class="card full">
+    <div class="card-header">📖 本月财富日记 <button class="btn btn-sm btn-pink copy-btn" onclick="genDiary()" style="margin-left:auto;">🤖 生成日记</button></div>
+    <div class="diary-card" id="diary-box">
+      <div class="diary-date" id="diary-month"></div>
+      <div class="diary-text" id="diary-text">点击「生成日记」让AI帮你写本月财富故事 ✨</div>
+    </div>
+  </div>
+
+  <!-- Tug of war -->
+  <div class="card">
+    <div class="card-header">⚔️ 家教 vs 星巴克</div>
+    <div class="tug-war" id="tug-war"></div>
+  </div>
+
+  <!-- Week Compare -->
+  <div class="card">
+    <div class="card-header">📊 本周 vs 上周</div>
+    <div class="compare-row" id="week-compare"></div>
+  </div>
+
+  <!-- Milestones -->
+  <div class="card">
+    <div class="card-header">🏆 成就里程碑</div>
+    <div class="milestone-grid" id="milestone-grid"></div>
+  </div>
+
+  <!-- Prediction -->
+  <div class="card">
+    <div class="card-header">🔮 下周预测</div>
+    <div class="pred-box" id="pred-box">暂无排班数据</div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="card full">
+    <div class="card-header">📅 收支时间线</div>
+    <div class="timeline" id="timeline-box">
+      <div style="text-align:center;color:var(--text2);padding:20px;font-size:13px;">📝 记录一笔支出或排班后，这里会变得丰富起来</div>
+    </div>
+  </div>
+
+  <!-- Week calendar -->
+  <div class="card full">
+    <div class="card-header">📅 本周排班 <span style="font-size:11px;color:var(--text2)">(点击格子编辑)</span></div>
+    <div class="week-grid" id="week-cal"></div>
+  </div>
+
+  <!-- Health Report -->
+  <div class="card full">
+    <div class="card-header">🩺 月度财务体检</div>
+    <div class="health-card" id="health-box"></div>
+  </div>
+
+  <!-- Student economy cards -->
+  <div class="card full">
+    <div class="card-header">⭐ 学生经济档案 <span style="font-size:11px;color:var(--text2)">(来自家教二 + 财务记录)</span></div>
+    <div class="student-cards" id="stu-cards">暂无学生</div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="card full">
+    <div class="card-header">⚡ 快捷操作</div>
+    <div class="actions">
+      <button class="btn btn-pink" onclick="openEditCurrentWeek()">📅 编辑本周排班</button>
+      
+      <button class="btn btn-outline" onclick="openAddModal('expense','')">💸 记一笔支出</button>
+      <button class="btn btn-green" onclick="openGoalModal()">🎯 设储蓄目标</button>
+    </div>
+  </div>
+
+  <!-- Weekly summary -->
+  <div class="card full">
+    <div class="card-header">📝 本周总结 <button class="btn btn-sm btn-blue" onclick="genSummary()">🤖 AI生成</button></div>
+    <div class="summary-box" id="summary-box">点击 AI 生成按钮，获取本周财务总结</div>
+  </div>
+
+  <!-- Pending income -->
+  <div class="card full" id="pending-card">
+    <div class="card-header">⏳ 待记账 <span style="font-size:11px;color:var(--text2)">(家教二反馈已写但未记收入)</span></div>
+    <div style="padding:16px;" id="pending-list">加载中…</div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal"><div class="modal-card" id="settings-content"></div></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="modal-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase Init ──
+var SUPABASE_URL = 'https://btjjgxttyfpgdyfccwpm.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_hNfQ1CvrMDToIo1y_V2quA_1cj8i2Vk';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── DeepSeek Config ──
+var DEEPSEEK_API_KEY = atob('c2stYjA3N2NhNTU1ZWQwNGM3MWE2YjI3MmZiYzdmYzM0NTQ=');
+var DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+
+// ── Database Helpers ──
+var db = {
+  finance: {
+    getAll: function() {
+      return sb.from('finance').select('*').order('id', { ascending: false }).then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        return r.data || [];
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    },
+    add: function(record) {
+      record.id = Date.now();
+      record.time = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+      return sb.from('finance').insert([record]).then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        return { ok: true, record: record };
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    }
+  },
+  goals: {
+    getAll: function() {
+      return sb.from('goals').select('*').then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        return r.data || [];
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    },
+    add: function(goal) {
+      goal.id = Date.now();
+      return sb.from('goals').insert([goal]).then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        return { ok: true, goal: goal };
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    },
+    update: function(id, data) {
+      return sb.from('goals').update(data).eq('id', id).then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        return { ok: true };
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    }
+  },
+  weeks: {
+    getAll: function() {
+      return sb.from('weeks').select('*').then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        var result = {};
+        (r.data || []).forEach(function(row) {
+          result[row.weekKey] = row.days || row;
+        });
+        return result;
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    },
+    save: function(weekKey, days) {
+      return sb.from('weeks').upsert([{ weekKey: weekKey, days: days }], { onConflict: 'weekKey' }).then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        return { ok: true };
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    }
+  },
+  settings: {
+    getAll: function() {
+      return sb.from('settings').select('*').then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        if (r.data && r.data.length > 0) {
+          var s = r.data[0];
+          delete s.id;
+          return s;
+        }
+        return { tutoringRate: 200, starbucksRate: 20 };
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    },
+    save: function(s) {
+      return sb.from('settings').upsert([s]).then(function(r) {
+        if (r.error) throw new Error(r.error.message);
+        return { ok: true, settings: s };
+      }).catch(function() { throw new Error('无法连接数据库，请检查网络'); });
+    }
+  }
+};
+
+// ── Helpers ──
+const DAY_NAMES = ['一','二','三','四','五','六','日'];
+const EMOJIS = ['🚗','🖨️','📚','🍬','✏️','📱','🎁','🎨','🎮','🍕','🧃','📦'];
+let finance = [], goals = [], weekData = {};
+let pendingIncome = [];
+
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;setTimeout(()=>t.className='toast',2000);}
+
+// ── Piggy SVG ──
+function drawPiggy(pct){
+  const h=Math.min(70,Math.max(10,pct*70/100));
+  return `<svg width="100" height="110" viewBox="0 0 100 110">
+    <ellipse cx="50" cy="55" rx="40" ry="35" fill="#FCE7F3" stroke="#EC4899" stroke-width="2"/>
+    <circle cx="35" cy="45" r="5" fill="#1E293B"/>
+    <ellipse cx="55" cy="50" rx="8" ry="6" fill="#F59E0B"/>
+    <ellipse cx="50" cy="88" rx="18" ry="8" fill="#FCE7F3" stroke="#EC4899" stroke-width="2"/>
+    ${[0,1,2,3,4].map(i=>`<circle cx="${35+i*8}" cy="${85-h/2+i*3}" r="7" fill="#F59E0B" stroke="#D97706" stroke-width="1"><animate attributeName="cy" values="${85-h/2+i*3};${85-h/2+i*3-3};${85-h/2+i*3}" dur="2s" repeatCount="indefinite"/></circle>`).join('')}
+  </svg>`;
+}
+
+// ── Load ──
+async function loadAll(){
+  try {
+    [finance,goals,weekData]=await Promise.all([
+      db.finance.getAll(),db.goals.getAll(),db.weeks.getAll()
+    ]);
+  } catch(e) {
+    toast('无法连接数据库，请检查网络','error');
+    console.error(e);
+  }
+  pendingIncome = [];
+  const now=new Date();document.getElementById('today-date').textContent=now.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  renderAll();
+}
+
+function renderAll(){renderStats();renderTug();renderWeekCompare();renderMilestones();renderPred();renderCal();renderHealth();renderTimeline();renderStudents();renderPending();}
+
+function computeWeekIncome(){
+  let tutoring=0, starbucks=0, studentMap={};
+  Object.values(weekData).forEach(function(days){
+    Object.values(days||{}).forEach(function(day){
+      if(!day)return;
+      if(day.type==="tutoring"){
+        var amt=+day.amount||settings.tutoringRate;
+        tutoring+=amt;
+        var name=day.detail||"未命名学生";
+        if(!studentMap[name])studentMap[name]={name:name,lessons:0,income:0};
+        studentMap[name].lessons++;
+        studentMap[name].income+=amt;
+      }
+      if(day.type==="starbucks"){
+        var hrs=+day.hours||0;
+        starbucks+=hrs*settings.starbucksRate;
+      }
+    });
+  });
+  return{tutoring:tutoring,starbucks:starbucks,studentMap:studentMap};
+}
+function thisMonth(){
+  const n=new Date(),m=n.getMonth(),y=n.getFullYear();
+  return finance.filter(f=>{const d=new Date(f.time);return d.getMonth()===m&&d.getFullYear()===y;});
+}
+function thisWeekStart(){
+  const n=new Date();n.setDate(n.getDate()-(n.getDay()+6)%7);n.setHours(0,0,0,0);return n;
+}
+
+function renderStats(){
+  const m=thisMonth();
+  const {tutoring:ti, starbucks:si}=computeWeekIncome();
+  const ex=finance.filter(f=>f.type==='expense').reduce((s,r)=>s+(+r.amount||0),0);
+  const total=ti+si, net=total-ex;
+
+  // Goal progress for piggy
+  const activeGoal=goals.find(g=>g.status!=='done')||goals[0];
+  const pct=activeGoal?(total/activeGoal.target*100):(total>0?50:0);
+  document.getElementById('piggy-svg').innerHTML=drawPiggy(Math.min(pct,100));
+
+  document.getElementById('month-income').textContent='¥'+total.toLocaleString();
+  document.getElementById('tutor-income').textContent='¥'+ti.toLocaleString();
+  document.getElementById('sb-income').textContent='¥'+si.toLocaleString();
+  document.getElementById('net-income').textContent='¥'+net.toLocaleString();
+
+  // Goal
+  if(activeGoal){
+    document.getElementById('piggy-svg').innerHTML+=`<div style="font-size:11px;color:var(--pink);margin-top:4px;">🎯 ${activeGoal.name} ${Math.round(pct)}%</div>`;
+  }
+}
+
+function renderTug(){
+  const m=thisMonth();
+  const {tutoring:ti, starbucks:si}=computeWeekIncome();
+  const total=ti+si||1;
+  const tp=Math.round(ti/total*100),sp=Math.round(si/total*100);
+  let winner='',wclass='';
+  if(ti>si){winner='🏆 家教胜！时薪高 '+Math.round(ti/Math.max(1,si)*100)/100+' 倍';wclass= 'color:var(--blue)'}
+  else if(si>ti){winner='☕ 星巴克胜！'+Math.round(si/Math.max(1,ti)*100)/100+' 倍';wclass= 'color:var(--yellow)'}
+  else winner='🤝 势均力敌！';
+
+  document.getElementById('tug-war').innerHTML=`
+    <div class="tug-bar">
+      <div class="tug-tutor" style="width:${tp}%">${tp>10?'📚 ¥'+ti.toLocaleString():''}</div>
+      <div class="tug-coffee" style="width:${sp}%">${sp>10?'¥'+si.toLocaleString()+' ☕':''}</div>
+    </div>
+    <div class="tug-labels"><span>家教 ¥${ti.toLocaleString()}</span><span>星巴克 ¥${si.toLocaleString()}</span></div>
+    <div class="tug-winner" style="${wclass}">${winner}</div>`;
+}
+
+function renderPred(){
+  const ws=thisWeekStart();
+  const nextStart=new Date(ws);nextStart.setDate(ws.getDate()+7);
+  const nextKey=nextStart.toISOString().slice(0,10);
+  const days=weekData[nextKey];
+  if(!days){document.getElementById('pred-box').innerHTML='<div class="pred-num" style="color:var(--text2)">--</div><div class="pred-trend">暂无下周排班</div>';return;}
+  
+  let pred=0;
+  Object.values(days).forEach(d=>{
+    if(d.type==='tutoring')pred+=d.amount||200;
+    if(d.type==='starbucks')pred+=d.amount||(d.hours*20);
+  });
+  
+  const thisKey=ws.toISOString().slice(0,10);
+  const thisDays=weekData[thisKey];
+  let thisTotal=0;
+  if(thisDays)Object.values(thisDays).forEach(d=>{
+    if(d.type==='tutoring')thisTotal+=d.amount||200;
+    if(d.type==='starbucks')thisTotal+=d.amount||(d.hours*20);
+  });
+  
+  const change=thisTotal?Math.round((pred-thisTotal)/thisTotal*100):0;
+  document.getElementById('pred-box').innerHTML=`
+    <div class="pred-num">¥${pred.toLocaleString()}</div>
+    <div class="pred-trend ${change>=0?'up':'down'}">比本周 ${change>=0?'↑':''}${Math.abs(change)}%</div>`;
+}
+
+function renderCal(){
+  const ws=thisWeekStart();
+  const key=ws.toISOString().slice(0,10);
+  const days=weekData[key]||{};
+  const today=new Date();
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(ws);d.setDate(ws.getDate()+i);
+    const dk=d.toISOString().slice(0,10);
+    const day=days[dk]||{type:'rest'};
+    const isToday=d.toDateString()===today.toDateString();
+    const dayNum=d.getDate();
+    let tag='';
+    if(day.type==='tutoring')tag=`<div class="tag tutor">📚家教</div>${day.amount?`<div class="tag amount">¥${day.amount}</div>`:''}`;
+    else if(day.type==='starbucks')tag=`<div class="tag coffee">☕星巴克</div>${day.hours?`<div class="tag amount">${day.hours}h</div>`:''}`;
+    else tag='<div class="tag rest">😴休息</div>';
+    html+=`<div class="day-cell${isToday?' today':''}" onclick="editDay('${dk}','${DAY_NAMES[i]}')">
+      <div class="dow">周${DAY_NAMES[i]}</div><div class="day-num">${dayNum}</div>${tag}</div>`;
+  }
+  document.getElementById('week-cal').innerHTML=html;
+}
+
+function renderStudents(){
+  // Build student stats from weekData
+  const {studentMap}={...computeWeekIncome()};
+  finance.filter(f=>f.type==='expense'&&f.studentName).forEach(f=>{
+    const name=f.studentName;
+    if(!studentMap[name])studentMap[name]={name,lessons:0,income:0,expense:0};
+    studentMap[name].expense+=+f.amount||0;
+  });
+
+  const cards=Object.values(studentMap);
+  const emojis=['🌟','⭐','💫','✨','🔥','💎','🎓','📖'];
+  let html='';
+  if(!cards.length){html='<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px;">暂无学生收支数据<br>记录课时收入后自动出现</div>';}
+  else{
+    cards.forEach((s,i)=>{
+      const net=s.income-s.expense;
+      const stars=net>500?'🌟🌟🌟🌟🌟':net>300?'🌟🌟🌟🌟':net>100?'🌟🌟🌟':'🌟🌟';
+      html+=`<div class="stu-card">
+        <div class="stu-emoji">${emojis[i%emojis.length]}</div>
+        <div class="stu-name">${s.name}</div>
+        <div class="stu-stat">${s.lessons}节课 · 收入¥${s.income}</div>
+        ${s.expense>0?`<div class="stu-stat">成本 -¥${s.expense}</div>`:''}
+        <div class="stu-net">🤑 ¥${net}</div>
+        <div class="stu-stars">${stars}</div>
+      </div>`;
+    });
+  }
+  document.getElementById('stu-cards').innerHTML=html;
+}
+
+function renderPending(){
+  const list=document.getElementById('pending-list');
+  if(!pendingIncome.length){list.innerHTML='<div style="color:var(--text2);font-size:13px;">✅ 全部已记账</div>';document.getElementById('pending-card').style.display='none';return;}
+  document.getElementById('pending-card').style.display='';
+  list.innerHTML=pendingIncome.map(p=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span>📚 <b>${p.studentName}</b> · ${p.lastFeedback?.date||''}</span>
+      <span style="font-size:11px;color:var(--text2)">请加入排班</span>
+    </div>
+  `).join('');
+}
+
+// ── Modals ──
+function openAddModal(type,source){
+  const presets={'income':{title:'💰 记一笔收入',fields:'<label>金额 ¥</label><input type="number" id="mf-amount" placeholder="0" required>'},
+    'expense':{title:'💸 记一笔支出',fields:'<label>金额 ¥</label><input type="number" id="mf-amount" placeholder="0" required>'},
+  };
+  const p=presets[type];
+  const stuOpts=[{id:'',name:'无关联学生'}];
+  const studentMap={};
+  finance.filter(f=>f.source==='tutoring'&&f.studentName).forEach(f=>{studentMap[f.studentName]=f.studentId;});
+  Object.entries(studentMap).forEach(([name,id])=>stuOpts.push({id,name}));
+
+  document.getElementById('modal-content').innerHTML=`
+    <h2>${p.title}</h2>
+    ${p.fields}
+    ${source==='tutoring'?`<div class="form-group"><label>关联学生</label><select id="mf-student">${stuOpts.map(o=>`<option value="${o.id}">${o.name}</option>`).join('')}</select></div>
+    <div class="form-group"><label>学生姓名（手动）</label><input id="mf-sname" placeholder="如选上面则自动填充"></div>`:''}
+    ${type==='expense'?`<div class="form-group"><label>支出分类</label>
+      <div class="emoji-picker" id="emoji-pick">${EMOJIS.map(e=>`<span onclick="selEmoji(this,'${e}')">${e}</span>`).join('')}</div>
+      <input id="mf-cat" placeholder="或自定义描述" style="margin-top:8px;"></div>
+      <div class="form-group"><label>关联学生（可选）</label><select id="mf-student"><option value="">无</option>${stuOpts.slice(1).map(o=>`<option value="${o.id}">${o.name}</option>`).join('')}</select></div>`:''}
+    <div class="form-group"><label>备注</label><input id="mf-note" placeholder="可选"></div>
+    <button class="btn btn-pink" style="width:100%" onclick="saveRecord('${type}','${source}')">💾 保存</button>
+  `;
+  document.getElementById('modal').classList.add('show');
+  if(type==='expense'){window._selEmoji=EMOJIS[0];selEmoji(document.querySelector('#emoji-pick span'),EMOJIS[0]);}
+}
+
+function selEmoji(el,emoji){document.querySelectorAll('#emoji-pick span').forEach(s=>s.classList.remove('sel'));el.classList.add('sel');window._selEmoji=emoji;}
+
+async function saveRecord(type,source){
+  const amount=+document.getElementById('mf-amount').value;
+  if(!amount)return toast('请输入金额','error');
+  const record={type,source,amount};
+  if(source==='tutoring'){
+    const sid=+document.getElementById('mf-student').value;
+    const sname=document.getElementById('mf-sname').value||document.getElementById('mf-student').selectedOptions[0].text;
+    record.studentId=sid||undefined;record.studentName=sname;
+  }
+  if(type==='expense'){
+    record.category=document.getElementById('mf-cat').value||window._selEmoji||'其他';
+    const sid=+document.getElementById('mf-student').value;
+    if(sid){record.studentId=sid;record.studentName=document.getElementById('mf-student').selectedOptions[0].text;}
+  }
+  record.note=document.getElementById('mf-note').value||'';
+  try {
+    await db.finance.add(record);
+    closeModal();loadAll();toast('已记录','success');
+  } catch(e) { toast('无法连接数据库，请检查网络','error'); }
+}
+
+async function loadSettings(){
+  try{settings=await db.settings.getAll();document.getElementById('tutoring-rate-display')&&(document.getElementById('tutoring-rate-display').textContent='¥'+settings.tutoringRate+'/节');document.getElementById('coffee-rate-display')&&(document.getElementById('coffee-rate-display').textContent='¥'+settings.starbucksRate+'/时');}
+  catch(e){console.error('加载设置失败',e);}
+}
+function openSettings(){
+  document.getElementById('settings-content').innerHTML=`
+    <h2>⚙️ 时薪设置</h2>
+    <div class="form-group"><label>📚 家教时薪（每节课）</label>
+    <input type="number" id="set-tutoring" value="${settings.tutoringRate}" min="50" step="10">
+    </div>
+    <div class="form-group"><label>☕ 星巴克时薪（每小时）</label>
+    <input type="number" id="set-starbucks" value="${settings.starbucksRate}" min="10" step="1">
+    </div>
+    <button class="btn btn-pink" style="width:100%" onclick="saveSettings()">💾 保存设置</button>
+  `;
+  document.getElementById('settings-modal').classList.add('show');
+}
+async function saveSettings(){
+  const tutoringRate=+document.getElementById('set-tutoring').value;
+  const starbucksRate=+document.getElementById('set-starbucks').value;
+  if(!tutoringRate||!starbucksRate)return toast('请填写完整','error');
+  try {
+    await db.settings.save({tutoringRate,starbucksRate});
+    settings={tutoringRate,starbucksRate};
+    document.getElementById('settings-modal').classList.remove('show');
+    loadAll();toast('✅ 时薪已更新','success');
+  } catch(e) { toast('无法连接数据库，请检查网络','error'); }
+}
+loadSettings();
+
+// ── Diary ──
+async function genDiary(){
+  document.getElementById('diary-text').innerHTML='<span style="color:var(--text2)">✍️ AI正在为你写日记…</span>';
+  try{
+    const now = new Date();
+    const monthLabel = now.getFullYear()+'年'+(now.getMonth()+1)+'月';
+
+    let tutoringIncome=0, starbucksIncome=0, studentSet=new Set();
+    Object.values(weekData).forEach(function(days){
+      Object.values(days||{}).forEach(function(day){
+        if(!day)return;
+        if(day.type==='tutoring'){
+          tutoringIncome+= +day.amount||settings.tutoringRate;
+          if(day.detail) studentSet.add(day.detail);
+        }
+        if(day.type==='starbucks'){
+          starbucksIncome+= (+day.hours||0)*settings.starbucksRate;
+        }
+      });
+    });
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthExpenses = finance.filter(function(f){
+      const d=new Date(f.time);return f.type==='expense'&&d>=monthStart;
+    }).reduce(function(s,r){return s+(+r.amount||0);},0);
+
+    const totalIncome = tutoringIncome+starbucksIncome;
+    const lessonCount = studentSet.size;
+    const activeGoal = goals.find(function(g){return g.status!=='done';});
+    const goalText = activeGoal ? '正在为「'+activeGoal.name+'」攒钱中，目标 ¥'+activeGoal.target : '暂无储蓄目标';
+
+    const prompt = '你是用户最亲密的财务成长伙伴，像一位懂她的闺蜜/兄弟。用户是一名大学生家教老师+星巴克兼职。\n\n【'+monthLabel+' 财务数据】\n家教收入：¥'+tutoringIncome+'（教了'+lessonCount+'个学生）\n星巴克收入：¥'+starbucksIncome+'\n总支出：¥'+monthExpenses+'\n净收入：¥'+(totalIncome-monthExpenses)+'\n储蓄目标：'+goalText+'\n\n请用温暖、有画面感的语气，写一段150字以内的"财富成长日记"。像在写日记，不要像报告。要有：\n1. 对数据的感受（骄傲/鼓励/调侃都可以）\n2. 一个小亮点或小提醒\n3. 给用户一点力量\n\n直接返回纯文本，不要JSON，不要标题。';
+
+    const response = await fetch(DEEPSEEK_BASE_URL+'/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+DEEPSEEK_API_KEY },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: '你是一个温暖、有共情力的财务成长伙伴。请用亲密、有画面感、有温度的语气写日记。像闺蜜在耳边说话。150字以内。' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.9,
+        max_tokens: 400
+      })
+    });
+    const result = await response.json();
+    if (!result.choices || !result.choices[0]) throw new Error('AI 返回异常');
+    document.getElementById('diary-month').textContent = monthLabel;
+    document.getElementById('diary-text').innerHTML = result.choices[0].message.content.trim();
+  }catch(e){document.getElementById('diary-text').innerHTML='生成失败：'+e.message;}
+}
+
+// ── Milestones ──
+function renderMilestones(){
+  const {tutoring,starbucks}=computeWeekIncome();
+  const totalAll=tutoring+starbucks;
+  const activeGoal=goals.find(g=>g.status!=='done');
+  const goalReached=activeGoal?((tutoring+starbucks)>=activeGoal.target):false;
+  const studentCount=Object.keys(computeWeekIncome().studentMap).length;
+  const hasExpense=finance.some(f=>f.type==='expense');
+  const weekCount=Object.keys(weekData).length;
+
+  const milestones=[
+    {id:'first-lesson',icon:'📚',title:'首节课收入',cond:totalAll>0,date:totalAll>0?'已完成':'--'},
+    {id:'student-3',icon:'👨‍🎓',title:'教过3个学生',cond:studentCount>=3,date:studentCount>=3?'已完成':'还需'+(3-studentCount)+'人'},
+    {id:'net-1000',icon:'💎',title:'净收入破千',cond:totalAll>=1000,date:totalAll>=1000?'已完成':Math.round(totalAll/10)+'%'},
+    {id:'starbucks-week',icon:'☕',title:'星巴克周入>500',cond:starbucks>=500,date:starbucks>=500?'已完成':Math.round(starbucks/5)+'%'},
+    {id:'goal-crushed',icon:'🎯',title:'储蓄目标达成',cond:goalReached,date:goalReached?'达成!':'努力中'},
+    {id:'smart-spender',icon:'🧠',title:'精打细算',cond:hasExpense,date:hasExpense?'会记账':'记一笔?'},
+    {id:'consistent-4',icon:'🔥',title:'连续4周排班',cond:weekCount>=4,date:weekCount>=4?'坚持中':weekCount+'/4周'},
+    {id:'double-life',icon:'⚡',title:'双线作战',cond:tutoring>0&&starbucks>0,date:tutoring>0&&starbucks>0?'全能!':(tutoring>0?'缺星巴克':'缺家教')},
+  ];
+
+  document.getElementById('milestone-grid').innerHTML=milestones.map(m=>
+    `<div class="milestone-item ${m.cond?'unlocked':'locked'}">
+      <div class="ms-icon">${m.icon}</div>
+      <div class="ms-title">${m.title}</div>
+      <div class="ms-date">${m.date}</div>
+    </div>`
+  ).join('');
+}
+
+// ── Health Report ──
+function renderHealth(){
+  const {tutoring,starbucks}=computeWeekIncome();
+  const ti=tutoring+starbucks;
+  const ex=finance.filter(f=>f.type==='expense').reduce((s,r)=>s+(+r.amount||0),0);
+
+  // 1. Savings rate
+  const saveRate=ti>0?Math.round((ti-ex)/ti*100):0;
+  const saveGrade=saveRate>=50?'A':saveRate>=30?'B':'C';
+
+  // 2. Income stability (weeks with income vs total weeks)
+  const weekKeys=Object.keys(weekData).filter(k=>{
+    const days=weekData[k]||{};
+    return Object.values(days).some(d=>d&&(d.type==='tutoring'||d.type==='starbucks'));
+  });
+  const totalWeeks=Math.max(Object.keys(weekData).length,1);
+  const stableRate=Math.round(weekKeys.length/totalWeeks*100);
+  const stableGrade=stableRate>=80?'A':stableRate>=50?'B':'C';
+
+  // 3. Expense health (expense ratio)
+  const expenseRatio=ti>0?Math.round(ex/ti*100):0;
+  const expenseGrade=expenseRatio<=30?'A':expenseRatio<=60?'B':'C';
+
+  // Overall
+  const grades=[saveGrade,stableGrade,expenseGrade];
+  const scoreA=grades.filter(g=>g==='A').length;
+  const overallGrade=scoreA>=2?'A':scoreA>=1?'B':'C';
+
+  const gradeEmoji={A:'🌟',B:'👍',C:'💪'};
+  const gradeMsg={
+    A:'财务状态优秀！你是个小富婆的苗子',
+    B:'整体不错，还有优化空间',
+    C:'需要关注一下哦，但没关系慢慢来'
+  };
+
+  const metrics=[
+    {icon:'🐷',name:'储蓄率',desc:saveRate+'% 的收入存下来了',pct:saveRate,grade:saveGrade},
+    {icon:'📡',name:'收入稳定性',desc:weekKeys.length+'/'+totalWeeks+' 周有收入',pct:stableRate,grade:stableGrade},
+    {icon:'💡',name:'支出健康度',desc:'支出占收入 '+expenseRatio+'%',pct:100-expenseRatio,grade:expenseGrade},
+  ];
+
+  document.getElementById('health-box').innerHTML=`
+    <div class="health-overall">
+      <div class="health-grade ${overallGrade}">${gradeEmoji[overallGrade]}</div>
+      <div class="health-summary">
+        <div style="font-weight:700;font-size:14px;margin-bottom:2px;">综合评级：${overallGrade}级</div>
+        <div style="font-size:12px;color:var(--text2)">${gradeMsg[overallGrade]}</div>
+      </div>
+    </div>
+    <div class="health-metrics">
+      ${metrics.map(m=>`
+        <div class="health-metric">
+          <div class="hm-icon">${m.icon}</div>
+          <div class="hm-info">
+            <div class="hm-name">${m.name}</div>
+            <div class="hm-desc">${m.desc}</div>
+          </div>
+          <div class="hm-bar"><div class="hm-fill ${m.grade}" style="width:${m.pct}%"></div></div>
+          <div class="hm-grade ${m.grade}">${m.grade}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ── Timeline ──
+function renderTimeline(){
+  const recent=[...finance].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,12);
+  if(!recent.length){
+    document.getElementById('timeline-box').innerHTML='<div style="text-align:center;color:var(--text2);padding:20px;font-size:13px;">📝 记录一笔支出或排班后，这里会变得丰富起来</div>';
+    return;
+  }
+  document.getElementById('timeline-box').innerHTML=recent.map(f=>{
+    const t=new Date(f.time);
+    const timeStr=t.getMonth()+1+'/'+t.getDate()+' '+t.getHours()+':'+String(t.getMinutes()).padStart(2,'0');
+    const isIncome=f.type==='income';
+    const isGoal=f.type==='goal';
+    const iconClass=isIncome?'income':(f.type==='goal'?'goal':'expense');
+    const icon=isIncome?(f.source==='starbucks'?'☕':'📚'):(isGoal?'🎯':'💸');
+    const label=isIncome?(f.source==='starbucks'?'星巴克':'家教 - '+(f.studentName||'')):(f.category||f.note||'支出');
+    const amountClass=isIncome?'plus':'minus';
+    const sign=isIncome?'+':'-';
+    return `<div class="tl-item">
+      <div class="tl-icon ${iconClass}">${icon}</div>
+      <div class="tl-info"><div class="tl-label">${label}</div><div class="tl-time">${timeStr}</div></div>
+      <div class="tl-amount ${amountClass}">${sign}¥${(+f.amount||0).toLocaleString()}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Week Compare ──
+function renderWeekCompare(){
+  const ws=thisWeekStart();
+  const thisKey=ws.toISOString().slice(0,10);
+  const lastStart=new Date(ws);lastStart.setDate(ws.getDate()-7);
+  const lastKey=lastStart.toISOString().slice(0,10);
+
+  function calcWeek(key){
+    const days=weekData[key]||{};
+    let ti=0,si=0;
+    Object.values(days).forEach(d=>{
+      if(!d)return;
+      if(d.type==='tutoring')ti+=+d.amount||settings.tutoringRate;
+      if(d.type==='starbucks')si+=(+d.hours||0)*settings.starbucksRate;
+    });
+    return ti+si;
+  }
+  const thisTotal=calcWeek(thisKey);
+  const lastTotal=calcWeek(lastKey);
+  const diff=thisTotal-lastTotal;
+  const pct=lastTotal>0?Math.round(diff/lastTotal*100):(thisTotal>0?100:0);
+  const trend=diff>=0?'up':'down';
+  const arrow=diff>=0?'📈':'📉';
+
+  document.getElementById('week-compare').innerHTML=`
+    <div class="compare-side">
+      <div class="cs-label">上周</div>
+      <div class="cs-num">¥${lastTotal.toLocaleString()}</div>
+    </div>
+    <div class="compare-vs">VS</div>
+    <div class="compare-side">
+      <div class="cs-label">本周</div>
+      <div class="cs-num">¥${thisTotal.toLocaleString()}</div>
+    </div>
+    <div style="text-align:center;font-size:12px;margin-top:8px;color:var(--text2);">${arrow} ${trend==='up'?'+'+pct+'%':'−'+Math.abs(pct)+'%'} ${trend==='up'?'本周更棒！':'继续加油💪'}</div>
+  `;
+}
+
+function quickRecord(sid,sname){
+  document.getElementById('modal-content').innerHTML=`
+    <h2>💰 ${sname} 课时收入</h2>
+    <div class="form-group"><label>金额 ¥</label><input type="number" id="mf-amount" placeholder="200" value="200"></div>
+    <div class="form-group"><label>备注</label><input id="mf-note" placeholder="可选"></div>
+    <button class="btn btn-pink" style="width:100%" onclick="saveQuick('${sid}','${sname}')">💾 保存</button>
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+async function saveQuick(sid,sname){
+  const amount=+document.getElementById('mf-amount').value;
+  if(!amount)return toast('请输入金额','error');
+  try {
+    await db.finance.add({type:'income',source:'tutoring',amount,studentId:+sid,studentName:sname,note:document.getElementById('mf-note').value||''});
+    closeModal();loadAll();toast('✅ 已记录','success');
+  } catch(e) { toast('无法连接数据库，请检查网络','error'); }
+}
+
+function openGoalModal(){
+  const active=goals.find(g=>g.status!=='done');
+  document.getElementById('modal-content').innerHTML=`
+    <h2>🎯 储蓄目标</h2>
+    ${active?`<div style="margin-bottom:16px;font-size:13px;">当前目标: <b>${active.name}</b> — ¥${active.current||0}/¥${active.target}</div>`:''}
+    <div class="form-group"><label>目标名称</label><input id="mg-name" placeholder="如：暑假旅行 🏖️" value="${active?.name||''}"></div>
+    <div class="form-group"><label>目标金额 ¥</label><input type="number" id="mg-target" placeholder="5000" value="${active?.target||''}"></div>
+    <button class="btn btn-pink" style="width:100%" onclick="saveGoal()">💾 ${active?'更新':'设定'}目标</button>
+    ${active?`<button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="finishGoal(${active.id})">✅ 标记完成</button>`:''}
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+async function saveGoal(){
+  const name=document.getElementById('mg-name').value,target=+document.getElementById('mg-target').value;
+  if(!name||!target)return toast('请填写完整','error');
+  const existing=goals.find(g=>g.status!=='done');
+  try {
+    if(existing){await db.goals.update(existing.id,{name,target});}
+    else{await db.goals.add({name,target,current:0});}
+    closeModal();loadAll();toast('✅ 目标已设','success');
+  } catch(e) { toast('无法连接数据库，请检查网络','error'); }
+}
+async function finishGoal(id){
+  try {
+    await db.goals.update(id,{status:'done'});
+    // Confetti
+    for(let i=0;i<30;i++){const c=document.createElement('div');c.className='confetti';c.textContent='🎉';c.style.left=Math.random()*100+'%';c.style.animationDelay=Math.random()*1+'s';c.style.animationDuration=(1.5+Math.random()*2)+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),3500);}
+    closeModal();loadAll();toast('🎉 目标达成！','success');
+  } catch(e) { toast('无法连接数据库，请检查网络','error'); }
+}
+
+function editDay(dk,dow){
+  const hasSchedule=Object.keys(weekData).some(k=>weekData[k]&&weekData[k][dk]&&weekData[k][dk].type!=='rest');
+  const day=weekData[Object.keys(weekData).find(k=>weekData[k]&&weekData[k][dk])||'']?.[dk]||{type:'rest'};
+  document.getElementById('modal-content').innerHTML=`
+    <h2>📅 周${dow} 排班</h2>
+    <div class="form-group"><label>类型</label><select id="md-type" onchange="toggleDayForm()">
+      <option value="rest" ${day.type==='rest'?'selected':''}>😴 休息</option>
+      <option value="tutoring" ${day.type==='tutoring'?'selected':''}>📚 家教</option>
+      <option value="starbucks" ${day.type==='starbucks'?'selected':''}>☕ 星巴克</option>
+    </select></div>
+    <div id="md-extra">${day.type==='tutoring'?`<div class="form-group"><label>学生/备注</label><input id="md-detail" value="${day.detail||''}" placeholder="如：吴庆涛"></div><div class="form-group"><label>预计收入 ¥</label><input type="number" id="md-amount" value="${day.amount||''}"></div>`:day.type==='starbucks'?`<div class="form-group"><label>工时（小时）</label><input type="number" id="md-hours" value="${day.hours||''}" step="0.5" oninput="updateCoffeeAmount()"><div style="font-size:12px;color:var(--blue);margin-top:4px;">预计收入：¥<span id="md-preview">${(day.hours||0)*settings.starbucksRate}</span>（时薪¥${settings.starbucksRate}/时）</div></div>`:''}</div>
+    <button class="btn btn-pink" style="width:100%" onclick="saveDay('${dk}')">💾 保存</button>
+    ${hasSchedule ? `<button class="btn-clear" onclick="clearDay('${dk}')">🗑️ 清除排班</button>` : ''}
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+function updateCoffeeAmount(){
+  const hrs=+document.getElementById('md-hours')?.value||0;
+  const amt=document.getElementById('md-amount');
+  if(amt)amt.value=hrs*settings.starbucksRate;
+}
+function toggleDayForm(){
+  const t=document.getElementById('md-type').value;
+  const el=document.getElementById('md-extra');
+  if(t==='tutoring')el.innerHTML='<div class="form-group"><label>学生/备注</label><input id="md-detail" placeholder="如：吴庆涛"></div><div class="form-group"><label>预计收入 ¥（时薪 ¥'+settings.tutoringRate+'/节）</label><input type="number" id="md-amount" value="'+settings.tutoringRate+'"></div>';
+  else if(t==='starbucks')el.innerHTML='<div class="form-group"><label>工时（小时）</label><input type="number" id="md-hours" step="0.5" placeholder="几小时？" oninput="updateCoffeeAmount()"><div class="form-group" style="margin-top:6px"><label>预计收入 ¥（时薪 ¥'+settings.starbucksRate+'/时）</label><input type="number" id="md-amount" value="0" readonly style="background:#F8FAFC"></div></div>';
+  else el.innerHTML='';
+}
+async function saveDay(dk){
+  const type=document.getElementById('md-type').value;
+  const day={type};
+  if(type==='tutoring'){day.detail=document.getElementById('md-detail')?.value||'';day.amount=+document.getElementById('md-amount')?.value||settings.tutoringRate;}
+  if(type==='starbucks'){const hrs=+document.getElementById('md-hours')?.value||0;day.hours=hrs;day.amount=day.hours*settings.starbucksRate;}
+  const ws=thisWeekStart();const key=ws.toISOString().slice(0,10);
+  const days={...weekData[key]||{},[dk]:day};
+  try {
+    await db.weeks.save(key,days);
+    closeModal();loadAll();toast('✅ 排班已更新','success');
+  } catch(e) { toast('无法连接数据库，请检查网络','error'); }
+}
+
+async function genSummary(){
+  document.getElementById('summary-box').innerHTML='🤖 AI生成中…';
+  try{
+    const now = new Date();
+    const ws = new Date(now); ws.setDate(now.getDate() - (now.getDay()+6)%7); ws.setHours(0,0,0,0);
+    const wsKey = ws.toISOString().slice(0,10);
+    const weekStartStr = ws.toLocaleDateString('zh-CN');
+
+    let tutoringIncome=0, starbucksIncome=0, lessonCount=0;
+    const thisWeek = weekData[wsKey]||{};
+    Object.values(thisWeek).forEach(function(day){
+      if(!day)return;
+      if(day.type==='tutoring'){tutoringIncome+= +day.amount||settings.tutoringRate;lessonCount++;}
+      if(day.type==='starbucks'){starbucksIncome+= (+day.hours||0)*settings.starbucksRate;}
+    });
+
+    const expenses = finance.filter(function(f) {
+      const t = new Date(f.time); return f.type==='expense' && t >= ws;
+    }).reduce(function(s, r) { return s + (Number(r.amount) || 0); }, 0);
+
+    const prompt = '你是用户的个人财务助理。请用温暖鼓励的语气，总结本周的财务状况。控制在100字以内。每周日期: '+weekStartStr+'\n\n本周家教收入: ¥'+tutoringIncome+'（'+lessonCount+'节课）\n本周星巴克收入: ¥'+starbucksIncome+'\n本周支出: ¥'+expenses+'\n净收入: ¥'+(tutoringIncome + starbucksIncome - expenses)+'\n\n请直接返回纯文本，不要JSON。';
+
+    const response = await fetch(DEEPSEEK_BASE_URL+'/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+DEEPSEEK_API_KEY },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: '你是一个温暖可爱的财务助手，用简短鼓励的语气帮用户总结每周收入和支出。' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.8,
+        max_tokens: 300
+      })
+    });
+    const result = await response.json();
+    if (!result.choices || !result.choices[0]) throw new Error('AI 返回异常');
+    document.getElementById('summary-box').innerHTML = result.choices[0].message.content.trim() + ' <button class="btn btn-sm btn-pink copy-btn" onclick="copySummary(this)">📋 复制</button>';
+  }catch(e){document.getElementById('summary-box').innerHTML='生成失败: '+e.message;}
+}
+function copySummary(btn){
+  const text=document.getElementById('summary-box').textContent.replace('📋 复制','').trim();
+  navigator.clipboard.writeText(text).then(()=>{btn.textContent='✅ 已复制';setTimeout(()=>btn.textContent='📋 复制',2000);});
+}
+
+async function clearDay(dk){
+  const ws=thisWeekStart();const key=ws.toISOString().slice(0,10);
+  const days={...weekData[key]||{}};
+  delete days[dk];
+  try {
+    await db.weeks.save(key,Object.keys(days).length?days:{});
+    closeModal();loadAll();toast('🗑️ 已清除','success');
+  } catch(e) { toast('无法连接数据库，请检查网络','error'); }
+}
+function openEditCurrentWeek(){document.querySelector(".week-grid")?.scrollIntoView({behavior:"smooth"});toast("👇 点击日期格子编辑排班","info");}
+function closeModal(){document.getElementById('modal').classList.remove('show');document.getElementById('settings-modal').classList.remove('show');}
+window._selEmoji='';
+let settings = {tutoringRate:200, starbucksRate:20};
+
+loadAll();
+</script>
+</body>
+</html>
