@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家教二 · AI教案生成系统</title>
+<style>
+:root {
+  --primary: #6366F1; --primary-light: #EEF2FF; --primary-dark: #4F46E5;
+  --success: #10B981; --warning: #F59E0B; --danger: #EF4444;
+  --bg: #F8FAFC; --card: #FFFFFF; --text: #1E293B;
+  --text-secondary: #64748B; --border: #E2E8F0;
+  --radius: 14px; --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:300px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;overflow:hidden;}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-header h1{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.sidebar-header .subtitle{font-size:12px;color:var(--text-secondary);margin-top:4px;}
+.sidebar-stats{display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);}
+.sidebar-stats .stat{flex:1;text-align:center;}
+.sidebar-stats .stat .num{font-size:22px;font-weight:700;color:var(--primary);}
+.sidebar-stats .stat .lbl{font-size:10px;color:var(--text-secondary);}
+.sidebar-list{flex:1;overflow-y:auto;padding:8px;}
+.sidebar-list .section-title{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-secondary);padding:12px 8px 6px;letter-spacing:0.5px;}
+.student-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all 0.15s;margin-bottom:2px;}
+.student-item:hover{background:var(--primary-light);}
+.student-item.active{background:var(--primary-light);border:1.5px solid var(--primary);}
+.student-item .avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0;}
+.student-item .info{flex:1;min-width:0;}
+.student-item .info .name{font-size:14px;font-weight:600;}
+.student-item .info .meta{font-size:11px;color:var(--text-secondary);}
+.student-item .stats{display:flex;gap:4px;align-items:center;}
+.student-item .mini-bar{width:6px;height:20px;border-radius:3px;}
+.student-item .mini-bar.high{background:var(--success);}
+.student-item .mini-bar.mid{background:var(--warning);}
+.student-item .mini-bar.low{background:var(--border);}
+.student-item .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.student-item .status-dot.has-plan{background:var(--success);}
+.student-item .status-dot.no-plan{background:var(--border);}
+
+.main{position:fixed;left:300px;top:0;right:0;bottom:0;overflow-y:auto;padding:24px 32px;}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;color:var(--text-secondary);}
+.welcome .icon{font-size:64px;margin-bottom:16px;}
+.welcome h2{font-size:20px;color:var(--text);margin-bottom:8px;}
+.welcome p{font-size:14px;max-width:360px;}
+
+.detail{display:none;}
+.detail.active{display:block;}
+
+/* Student header */
+.student-header-card{background:var(--card);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow);display:flex;gap:20px;flex-wrap:wrap;}
+.student-header-card .left{display:flex;align-items:center;gap:14px;flex:1;min-width:200px;}
+.student-header-card .big-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;}
+.student-header-card .hinfo .hname{font-size:20px;font-weight:700;}
+.student-header-card .hinfo .hmeta{font-size:13px;color:var(--text-secondary);margin-top:2px;}
+.student-header-card .parent-note{font-size:13px;color:var(--text-secondary);margin-top:4px;font-style:italic;}
+
+/* Radar chart */
+.student-header-card .radar-box{width:180px;height:180px;position:relative;flex-shrink:0;}
+.student-header-card .radar-box .radar-label{position:absolute;font-size:10px;color:var(--text-secondary);font-weight:600;}
+.student-header-card .radar-box .rl-top{top:2px;left:50%;transform:translateX(-50%);}
+.student-header-card .radar-box .rl-right{right:2px;top:50%;transform:translateY(-50%);}
+.student-header-card .radar-box .rl-bottom{bottom:2px;left:50%;transform:translateX(-50%);}
+.student-header-card .radar-box .rl-left{left:2px;top:50%;transform:translateY(-50%);}
+
+/* Snapshot card */
+.snapshot-card{background:linear-gradient(135deg,#EEF2FF,#F0FDF4);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px;border:1px solid #C7D2FE;display:flex;gap:16px;flex-wrap:wrap;}
+.snapshot-card .snap-col{flex:1;min-width:180px;}
+.snapshot-card .snap-label{font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:4px;}
+.snapshot-card .snap-text{font-size:13px;color:var(--text);line-height:1.6;}
+.snapshot-card .snap-empty{font-size:13px;color:var(--text-secondary);font-style:italic;}
+.snapshot-card .goal-progress-bar{height:6px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden;}
+.snapshot-card .goal-progress-bar .fill{height:100%;background:var(--primary);border-radius:3px;transition:width 0.3s;}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.tab-btn{padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;background:var(--card);color:var(--text-secondary);box-shadow:var(--shadow);}
+.tab-btn.active{background:var(--primary);color:#fff;}
+.tab-btn:hover:not(.active){background:var(--primary-light);color:var(--primary);}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+/* Analysis */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;}
+.tag.strength{background:#D1FAE5;color:#065F46;}
+.tag.weakness{background:#FEE2E2;color:#991B1B;}
+.analysis-text{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-top:4px;}
+
+/* Goals */
+.goal-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:#F8FAFC;margin-bottom:8px;transition:all 0.2s;}
+.goal-item:hover{background:var(--primary-light);}
+.goal-item .goal-status{cursor:pointer;font-size:20px;flex-shrink:0;}
+.goal-item .goal-content{flex:1;min-width:0;}
+.goal-item .goal-title{font-size:14px;font-weight:600;}
+.goal-item .goal-title.done{text-decoration:line-through;color:var(--text-secondary);}
+.goal-item .goal-priority{font-size:11px;margin-top:2px;}
+.goal-item .goal-priority.high{color:var(--danger);}
+.goal-item .goal-priority.medium{color:var(--warning);}
+.goal-item .goal-priority.low{color:var(--success);}
+.goal-item .goal-actions{display:flex;gap:6px;}
+.goal-item input{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;}
+.goal-item input:focus{outline:none;border-color:var(--primary);}
+
+/* Modules */
+.module-card{border-left:3px solid var(--primary);padding:16px;background:#F8FAFC;border-radius:0 10px 10px 0;margin-bottom:12px;}
+.module-card.math{border-left-color:#6366F1;}
+.module-card.chinese{border-left-color:#F59E0B;}
+.module-card.english{border-left-color:#10B981;}
+.module-card .module-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
+.module-card .module-subject{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;}
+.module-card .module-subject.math{background:#EEF2FF;color:#4F46E5;}
+.module-card .module-subject.chinese{background:#FEF3C7;color:#92400E;}
+.module-card .module-subject.english{background:#D1FAE5;color:#065F46;}
+.module-card .module-title{font-size:15px;font-weight:600;}
+.module-card .module-detail{font-size:13px;color:var(--text-secondary);margin-top:4px;line-height:1.6;}
+.module-card .module-detail b{color:var(--text);}
+.module-card .module-hours{font-size:12px;color:var(--primary);font-weight:600;margin-top:6px;}
+/* Practice problems */
+.practice-list{margin-top:10px;padding-left:0;list-style:none;}
+.practice-list li{padding:8px 12px;margin-bottom:6px;background:#fff;border-radius:8px;font-size:13px;line-height:1.5;border:1px dashed var(--border);counter-increment:problem;}
+.practice-list li::before{content:counter(problem)'. ';font-weight:700;color:var(--primary);}
+.practice-list .answer-hint{color:var(--success);font-size:12px;margin-left:8px;}
+
+/* Schedule */
+.schedule-note{font-size:14px;color:var(--text-secondary);line-height:1.6;padding:12px;background:var(--primary-light);border-radius:10px;}
+.parent-note-advice{font-size:14px;color:var(--text-secondary);line-height:1.6;padding:12px;background:#FEF3C7;border-radius:10px;}
+
+/* Parent tasks */
+.parent-task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;margin-bottom:8px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;font-size:13px;line-height:1.6;}
+.parent-task-item .task-num{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--success);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+
+/* Feedback */
+.feedback-list{margin-bottom:16px;}
+.feedback-item{padding:12px;background:#F8FAFC;border-radius:10px;margin-bottom:8px;}
+.feedback-item .fb-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.feedback-item .fb-date{font-size:12px;color:var(--text-secondary);}
+.feedback-item .fb-content{font-size:14px;line-height:1.6;}
+.feedback-form textarea{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;min-height:80px;}
+.feedback-form textarea:focus{outline:none;border-color:var(--primary);}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-primary:disabled{background:#A5B4FC;cursor:not-allowed;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-success:hover{background:#059669;}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:#DC2626;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:14px 24px;border-radius:12px;color:#fff;font-weight:600;font-size:14px;z-index:1000;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.toast.success{background:var(--success);}
+.toast.error{background:var(--danger);}
+
+.no-plan-state{text-align:center;padding:40px 20px;}
+.no-plan-state .icon{font-size:48px;margin-bottom:12px;}
+.no-plan-state p{color:var(--text-secondary);margin-bottom:16px;}
+
+@media(max-width:768px){
+  .sidebar{width:100%;position:relative;height:auto;max-height:40vh;}
+  .main{position:relative;left:0;padding:16px;}
+  .analysis-grid{grid-template-columns:1fr;}
+  .student-header-card .radar-box{width:140px;height:140px;}
+}
+
+/* Agent toggle */
+.agent-toggle{display:flex;align-items:center;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);}
+.agent-toggle .toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+.agent-toggle .toggle-switch input{opacity:0;width:0;height:0;}
+.agent-toggle .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:24px;transition:0.3s;}
+.agent-toggle .toggle-slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s;}
+.agent-toggle input:checked+.toggle-slider{background:var(--success);}
+.agent-toggle input:checked+.toggle-slider::before{transform:translateX(20px);}
+.agent-toggle .toggle-label{font-size:12px;font-weight:600;color:var(--text-secondary);}
+.agent-toggle .toggle-status{font-size:10px;margin-left:auto;}
+
+/* Notification bell */
+.notif-bell{position:relative;cursor:pointer;font-size:18px;margin-left:auto;}
+.notif-bell .badge-count{position:absolute;top:-6px;right:-8px;background:var(--danger);color:#fff;font-size:10px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.notif-panel{position:fixed;top:0;right:0;width:360px;bottom:0;background:var(--card);z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.1);transform:translateX(100%);transition:transform 0.3s;overflow-y:auto;padding:20px;}
+.notif-panel.open{transform:translateX(0);}
+.notif-panel h3{font-size:16px;margin-bottom:16px;display:flex;justify-content:space-between;}
+.notif-panel .notif-item{padding:12px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.5;cursor:pointer;}
+.notif-panel .notif-item.unread{background:var(--primary-light);border-left:3px solid var(--primary);}
+.notif-panel .notif-item.read{background:#F8FAFC;opacity:0.7;}
+.notif-panel .notif-item .notif-time{font-size:11px;color:var(--text-secondary);margin-top:4px;}
+.notif-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.2);z-index:199;display:none;}
+.notif-overlay.show{display:block;}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1><span>🤖</span>家教二</h1>
+    <div class="subtitle">AI 个性化教案 · 教师端</div>
+  </div>
+  <div class="sidebar-stats">
+    <div class="stat"><div class="num" id="total-students">0</div><div class="lbl">学生总数</div></div>
+    <div class="stat"><div class="num" id="total-plans">0</div><div class="lbl">已有教案</div></div>
+  </div>
+  
+<div class="agent-toggle">
+  <label class="toggle-switch"><input type="checkbox" id="agent-switch" onchange="toggleAgent()"><span class="toggle-slider"></span></label>
+  <span class="toggle-label">🤖 智能体</span>
+  <span class="toggle-status" id="agent-status-text">关闭</span>
+  <div class="notif-bell" onclick="openNotifications()" id="notif-bell">
+    🔔<span class="badge-count" id="notif-count" style="display:none">0</span>
+  </div>
+</div>
+<div class="sidebar-list" id="student-list">
+</div>
+</div>
+
+<div class="main">
+  <div class="welcome" id="welcome">
+    <div class="icon">👈</div>
+    <h2>选择左侧学生查看详情</h2>
+    <p>包含 AI 分析、雷达图、具体练习题、家长任务单和教学反馈追踪</p>
+  </div>
+  <div class="detail" id="detail"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SUPABASE_URL = 'https://btjjgxttyfpgdyfccwpm.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_hNfQ1CvrMDToIo1y_V2quA_1cj8i2Vk';
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var DEEPSEEK_API_KEY = atob('c2stYjA3N2NhNTU1ZWQwNGM3MWE2YjI3MmZiYzdmYzM0NTQ=');
+var DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
+
+let students = [];
+let plans = [];
+let currentStudent = null;
+let currentPlan = null;
+
+const gradeMap = {1:'一年级',2:'二年级',3:'三年级',4:'四年级'};
+const avatarColors = ['#6366F1','#F59E0B','#10B981','#EF4444','#8B5CF6','#EC4899','#06B6D4','#F97316'];
+function avatarColor(name) { let sum = 0; for(let c of name) sum += c.charCodeAt(0); return avatarColors[sum % avatarColors.length]; }
+function initials(name) { return name.charAt(0); }
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2500);
+}
+// ── Helpers: Score & Radar (前端计算) ──
+function scoreByAnswer(answer, opts) {
+  if (!answer || !opts || !opts.length) return 2.5;
+  const idx = opts.indexOf(answer);
+  if (idx < 0) return 2.5;
+  if (opts.length === 1) return 3;
+  return Math.round((1 + (idx / (opts.length - 1)) * 4) * 10) / 10;
+}
+
+function getRadarData(student) {
+  const cn = { score: 0, total: 0 };
+  const mt = { score: 0, total: 0 };
+  const en = { score: 0, total: 0 };
+  const hb = { score: 0, total: 0 };
+
+  function scoreQA(qArr, target) {
+    if (!qArr || !qArr.length) return;
+    qArr.forEach(q => {
+      const ans = student.answers[q.id];
+      if (ans) { target.score += scoreByAnswer(ans, q.opts); target.total++; }
+    });
+  }
+
+  const cq = (student._cq || []).filter(q => q.id !== 'hb4' && q.id !== 'hb5');
+  scoreQA(cq, cn);
+  scoreQA(student._mq, mt);
+  scoreQA(student._eq, en);
+  const habitsQ = (student._hq || []).filter(q => ['hb1','hb2','hb3'].includes(q.id));
+  scoreQA(habitsQ, hb);
+
+  return {
+    chinese: cn.total ? Math.round(cn.score / cn.total * 20) : 0,
+    math: mt.total ? Math.round(mt.score / mt.total * 20) : 0,
+    english: en.total ? Math.round(en.score / en.total * 20) : 0,
+    habits: hb.total ? Math.round(hb.score / hb.total * 20) : 0,
+  };
+}
+
+// ── Load ──
+async function loadAll() {
+  try {
+    const [sRes, { data: plansData }] = await Promise.all([
+      fetch('data/students.json').then(r => r.json()),
+      sb.from('plans').select('*')
+    ]);
+    students = sRes;
+    plans = plansData || [];
+  } catch(e) {
+    students = [];
+    plans = [];
+    console.error('加载数据失败:', e);
+  }
+  document.getElementById('total-students').textContent = students.length;
+  document.getElementById('total-plans').textContent = plans.length;
+  renderStudentList();
+}
+
+function renderStudentList() {
+  const el = document.getElementById('student-list');
+  if (!students.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px;">暂无学生数据<br>请先在"家教"中填写评估</div>'; return; }
+
+  const grouped = {};
+  students.forEach(s => {
+    const g = gradeMap[s.childGrade] || '其他';
+    if (!grouped[g]) grouped[g] = [];
+    grouped[g].push(s);
+  });
+
+  const planIds = new Set(plans.map(p => p.studentId));
+  let html = '';
+  for (const [grade, list] of Object.entries(grouped)) {
+    html += `<div class="section-title">${grade}（${list.length}人）</div>`;
+    list.forEach(s => {
+      const hasPlan = planIds.has(s.id);
+      const active = currentStudent && currentStudent.id === s.id ? ' active' : '';
+      const r = s.radar || {};
+      html += `<div class="student-item${active}" onclick="selectStudent(${s.id})" id="sitem-${s.id}">
+        <div class="avatar" style="background:${avatarColor(s.childName)}">${initials(s.childName)}</div>
+        <div class="info"><div class="name">${s.childName}</div><div class="meta">${s.school||gradeMap[s.childGrade]}</div></div>
+        <div class="status-dot ${hasPlan?'has-plan':'no-plan'}" title="${hasPlan?'已有教案':'待生成'}"></div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+// ── Radar SVG ──
+function drawRadar(scores) {
+  const cx=90, cy=90, r=70, levels=4;
+  const labels=['语文','数学','英语','习惯'];
+  const vals=[scores.chinese||0,scores.math||0,scores.english||0,scores.habits||0].map(v=>Math.max(5,v/5));
+  let svg=`<svg width="180" height="180" viewBox="0 0 180 180">`;
+  // Grid
+  for(let l=1;l<=levels;l++){
+    const pts=[];
+    for(let i=0;i<4;i++){
+      const a=(-Math.PI/2)+(i*Math.PI*2/4);
+      pts.push(`${cx+Math.cos(a)*r*l/levels},${cy+Math.sin(a)*r*l/levels}`);
+    }
+    svg+=`<polygon points="${pts.join(' ')}" fill="none" stroke="#E2E8F0" stroke-width="1"/>`;
+  }
+  // Axes
+  for(let i=0;i<4;i++){
+    const a=(-Math.PI/2)+(i*Math.PI*2/4);
+    svg+=`<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(a)*r}" y2="${cy+Math.sin(a)*r}" stroke="#E2E8F0" stroke-width="1"/>`;
+  }
+  // Data
+  const dataPts=[];
+  for(let i=0;i<4;i++){
+    const a=(-Math.PI/2)+(i*Math.PI*2/4);
+    dataPts.push(`${cx+Math.cos(a)*r*vals[i]/20},${cy+Math.sin(a)*r*vals[i]/20}`);
+  }
+  svg+=`<polygon points="${dataPts.join(' ')}" fill="rgba(99,102,241,0.2)" stroke="#6366F1" stroke-width="2"/>`;
+  // Dots
+  for(let i=0;i<4;i++){
+    const a=(-Math.PI/2)+(i*Math.PI*2/4);
+    const px=cx+Math.cos(a)*r*vals[i]/20, py=cy+Math.sin(a)*r*vals[i]/20;
+    svg+=`<circle cx="${px}" cy="${py}" r="4" fill="#6366F1"/>`;
+  }
+  svg+=`</svg>`;
+
+  // Labels
+  const pos=[{t:'top',l:'50%'},{t:'50%',l:'auto',r:'-10px'},{t:'auto',b:'-5px',l:'50%'},{t:'50%',l:'-10px'}];
+  const labelHtml=labels.map((lb,i)=>
+    `<div class="radar-label rl-${['top','right','bottom','left'][i]}" style="${pos[i].t?'top:'+pos[i].t:''}${pos[i].b?'bottom:'+pos[i].b:''};${pos[i].l?pos[i].l!='auto'?'left:'+pos[i].l:'':'right:'+pos[i].r}">${lb}<br><span style="font-size:11px;color:var(--primary);">${(vals[i]).toFixed(0)}</span></div>`
+  ).join('');
+
+  return `<div class="radar-box" style="position:relative;">${svg}${labelHtml}</div>`;
+}
+
+// ── Select ──
+async function selectStudent(id) {
+  currentStudent = students.find(s => s.id === id);
+  currentPlan = plans.find(p => p.studentId === id) || null;
+  if (!currentStudent) return;
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('detail').classList.add('active');
+  renderStudentList();
+  renderDetail();
+}
+
+function renderDetail() {
+  const s = currentStudent;
+  const p = currentPlan;
+  const grade = gradeMap[s.childGrade] || s.childGrade;
+  const radar = (s.radar && (s.radar.chinese||s.radar.math||s.radar.english||s.radar.habits)) ? s.radar : null;
+
+  let html = `
+  <div class="student-header-card">
+    <div class="left">
+      <div class="big-avatar" style="background:${avatarColor(s.childName)}">${initials(s.childName)}</div>
+      <div class="hinfo">
+        <div class="hname">${s.childName} <span style="font-size:14px;font-weight:400;color:var(--text-secondary);">${grade}</span></div>
+        <div class="hmeta">${s.school||'学校未填'} · 评估于 ${s.timestamp}</div>
+        ${s.parentGoal ? `<div class="parent-note">📝 家长期望：${s.parentGoal}</div>` : ''}
+      </div>
+    </div>
+    ${radar ? drawRadar(radar) : '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:12px;">暂无雷达数据</div>'}
+  </div>`;
+
+  if (!p) {
+    html += `
+    <div class="no-plan-state" style="margin-top:40px;">
+      <div class="icon">📋</div>
+      <p>该学生还没有教学方案</p>
+      <button class="btn btn-primary" onclick="generatePlan(${s.id})" id="gen-btn">🤖 AI 生成个性化教案</button>
+    </div>`;
+  } else {
+    // ── Snapshot (P0) ──
+    html += renderSnapshot(p);
+
+    html += renderPlanTabs(p);
+  }
+
+  document.getElementById('detail').innerHTML = html;
+  if (p && radar) {
+    // Re-render radar in the plan data
+  }
+}
+
+// ── Snapshot Card (P0) ──
+function renderSnapshot(p) {
+  const lastFb = p.feedback && p.feedback.length ? p.feedback[p.feedback.length-1] : null;
+  const goalsTotal = p.goals ? p.goals.length : 0;
+  const goalsDone = p.goals ? p.goals.filter(g => g.status === 'completed').length : 0;
+  const pct = goalsTotal ? Math.round(goalsDone/goalsTotal*100) : 0;
+
+  let fbHtml = lastFb
+    ? `<div class="snap-text">📅 ${lastFb.date}<br>${lastFb.content.length > 80 ? lastFb.content.slice(0,80)+'…' : lastFb.content}</div>`
+    : `<div class="snap-empty">暂无反馈记录</div>`;
+
+  let goalHtml = goalsTotal
+    ? `<div class="snap-text">已完成 ${goalsDone}/${goalsTotal} 个目标</div><div class="goal-progress-bar"><div class="fill" style="width:${pct}%"></div></div>`
+    : `<div class="snap-empty">暂无教学目标</div>`;
+
+  return `
+  <div class="snapshot-card">
+    <div class="snap-col">
+      <div class="snap-label">📌 上节课回顾</div>
+      ${fbHtml}
+    </div>
+    <div class="snap-col">
+      <div class="snap-label">🎯 目标进度</div>
+      ${goalHtml}
+    </div>
+    <div class="snap-col">
+      <div class="snap-label">🕐 最后更新</div>
+      <div class="snap-text">${p.updatedAt}</div>
+    </div>
+  </div>`;
+}
+
+// ── Tabs ──
+function renderPlanTabs(p) {
+  const goalsDone = p.goals ? p.goals.filter(g => g.status === 'completed').length : 0;
+  const goalsTotal = p.goals ? p.goals.length : 0;
+  const fbCount = p.feedback ? p.feedback.length : 0;
+  const hasTasks = p.parentTasks && p.parentTasks.length;
+
+  return `
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('analysis', this)">📊 AI 分析</button>
+    <button class="tab-btn" onclick="switchTab('goals', this)">🎯 目标 (${goalsDone}/${goalsTotal})</button>
+    <button class="tab-btn" onclick="switchTab('modules', this)">📚 教学模块</button>
+    <button class="tab-btn" onclick="switchTab('schedule', this)">📅 课堂流程</button>
+    <button class="tab-btn" onclick="switchTab('parent', this)">👨‍👩‍👧 家长任务${hasTasks ? ' ✓' : ''}</button>
+    <button class="tab-btn" onclick="switchTab('feedback', this)">💬 反馈 (${fbCount})</button>
+  </div>
+  <div id="tab-content"></div>
+  <script>
+    currentPlan = ${JSON.stringify(p).replace(/<\/script>/g,'<\\/script>')};
+    switchTab('analysis');
+  <\/script>`;
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const p = currentPlan;
+  if (!p) return;
+  let html = '';
+
+  if (tab === 'analysis') {
+    const a = p.analysis || {};
+    html += `<div class="card"><h3>📊 AI 综合分析</h3>
+      <div class="analysis-grid">
+        <div><strong style="font-size:14px;">✅ 优势</strong><div class="tag-list">${(a.strengths||[]).map(t=>`<span class="tag strength">${t}</span>`).join('')}</div></div>
+        <div><strong style="font-size:14px;">⚠️ 薄弱点</strong><div class="tag-list">${(a.weaknesses||[]).map(t=>`<span class="tag weakness">${t}</span>`).join('')}</div></div>
+      </div>
+      ${a.learningStyle ? `<div class="analysis-text" style="margin-top:12px;"><strong>学习风格：</strong>${a.learningStyle}</div>` : ''}
+      ${a.overallAssessment ? `<div class="analysis-text" style="margin-top:4px;"><strong>综合评估：</strong>${a.overallAssessment}</div>` : ''}
+    </div>`;
+  }
+
+  else if (tab === 'goals') {
+    html += `<div class="card"><h3>🎯 教学目标</h3>`;
+    html += `<div style="margin-bottom:12px;"><button class="btn btn-sm btn-outline" onclick="addGoal()">+ 添加目标</button></div>`;
+    if (p.goals && p.goals.length) {
+      html += `<div id="goals-container">`;
+      p.goals.forEach((g, i) => {
+        const icon = g.status === 'completed' ? '✅' : g.status === 'in_progress' ? '🔄' : '⭕';
+        const doneClass = g.status === 'completed' ? ' done' : '';
+        html += `<div class="goal-item" id="goal-${i}">
+          <span class="goal-status" onclick="toggleGoal(${i})" title="切换状态">${icon}</span>
+          <div class="goal-content">
+            <div class="goal-title${doneClass}">${g.title}</div>
+            <div class="goal-priority ${g.priority}">${g.priority==='high'?'🔴 高优先':g.priority==='medium'?'🟡 中优先':'🟢 低优先'}</div>
+          </div>
+          <div class="goal-actions">
+            <button class="btn btn-sm btn-outline" onclick="editGoal(${i})">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteGoal(${i})">🗑</button>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    } else { html += '<div style="color:var(--text-secondary);font-size:13px;">暂无教学目标</div>'; }
+    html += `</div>`;
+  }
+
+  else if (tab === 'modules') {
+    html += `<div class="card"><h3>📚 教学模块</h3>`;
+    if (p.modules && p.modules.length) {
+      p.modules.forEach(m => {
+        const sj = (m.subject||'').includes('语文') ? 'chinese' : (m.subject||'').includes('英语') ? 'english' : 'math';
+        const sLabel = (m.subject||'').includes('语文') ? '语文' : (m.subject||'').includes('英语') ? '英语' : '数学';
+        html += `<div class="module-card ${sj}">
+          <div class="module-header">
+            <span class="module-subject ${sj}">${sLabel}</span>
+            <strong class="module-title">${m.title}</strong>
+          </div>
+          <div class="module-detail">${m.focus ? `<b>重点：</b>${m.focus}<br>` : ''}${m.exercises ? `<b>练习形式：</b>${m.exercises}<br>` : ''}${m.tips ? `<b>注意：</b>${m.tips}` : ''}</div>
+          ${m.sessionFocus ? `<div class="module-hours">⏱ 本课分配：${m.sessionFocus}</div>` : ''}
+          ${m.practiceProblems && m.practiceProblems.length ? `
+          <ol class="practice-list">${m.practiceProblems.map(pp => {
+            const parts = pp.split(/[（(]答案[：:]/);
+            return `<li>${parts[0]}${parts[1] ? `<span class="answer-hint">→ 答案：${parts[1].replace(/[）)]$/,'')}</span>` : ''}</li>`;
+          }).join('')}</ol>` : ''}
+        </div>`;
+      });
+    } else { html += '<div style="color:var(--text-secondary);font-size:13px;">暂无教学模块</div>'; }
+    html += `</div>`;
+  }
+
+  else if (tab === 'schedule') {
+    html += `<div class="card"><h3>📅 本节课教学流程</h3><div class="schedule-note">${p.suggestedSchedule || '暂无建议'}</div></div>`;
+    html += `<div class="card"><h3>👨‍👩‍👧 家长辅导建议</h3><div class="parent-note-advice">${p.parentAdvice || '暂无建议'}</div></div>`;
+  }
+
+  else if (tab === 'parent') {
+    html += `<div class="card"><h3>👨‍👩‍👧 家长课后任务单</h3><div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">以下是建议家长在课后6天内协助完成的小任务：</div>`;
+    if (p.parentTasks && p.parentTasks.length) {
+      html += p.parentTasks.map((t,i) => `<div class="parent-task-item"><span class="task-num">${i+1}</span><span>${t}</span></div>`).join('');
+    } else {
+      html += '<div style="color:var(--text-secondary);font-size:13px;">暂无家长任务（可重新生成教案获取）</div>';
+    }
+    html += `</div>`;
+  }
+
+  else if (tab === 'feedback') {
+    html += `<div class="card"><h3>💬 课后反馈记录</h3>`;
+    if (p.feedback && p.feedback.length) {
+      html += `<div class="feedback-list">`;
+      p.feedback.forEach(f => {
+        html += `<div class="feedback-item"><div class="fb-header"><span class="fb-date">📅 ${f.date}</span></div><div class="fb-content">${f.content}</div></div>`;
+      });
+      html += `</div>`;
+    }
+    html += `<div class="feedback-form"><textarea id="fb-input" placeholder="记录本次上课内容、学生表现、改进思考…\n（下次AI生成教案时会参考这些反馈！）"></textarea>
+      <div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="addFeedback()">💾 保存反馈</button></div></div></div>`;
+  }
+
+  html += `<div class="btn-row" style="margin-top:16px;">
+    <button class="btn btn-primary" onclick="generatePlan(${p.studentId})">🔄 重新生成教案</button>
+    <button class="btn btn-outline" onclick="savePlan()">💾 保存修改</button>
+    <button class="btn btn-success" onclick="shareReport()">📤 分享家长报告</button>
+  </div>`;
+
+  document.getElementById('tab-content').innerHTML = html;
+}
+
+// ── Plan operations ──
+async function generatePlan(studentId) {
+  const btn = document.getElementById('gen-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> AI 分析中…'; }
+  try {
+    const student = students.find(s => s.id === studentId);
+    if (!student) throw new Error('学生不存在');
+
+    const gradeMap = { '1': '一年级', '2': '二年级', '3': '三年级', '4': '四年级' };
+    const grade = gradeMap[student.childGrade] || student.childGrade;
+
+    function formatQAs(qArr) {
+      if (!qArr || !qArr.length) return '（未填写）';
+      return qArr.map(q => '  · ' + q.q + '\n    回答：' + (student.answers[q.id] || '未作答')).join('\n');
+    }
+
+    const cnText = formatQAs(student._cq);
+    const mtText = formatQAs(student._mq);
+    const enText = formatQAs(student._eq);
+    const hbText = formatQAs(student._hq);
+
+    const existingPlan = plans.find(p => p.studentId === studentId);
+    let feedbackHistory = '';
+    if (existingPlan && existingPlan.feedback && existingPlan.feedback.length) {
+      feedbackHistory = '\n【历史教学反馈（请根据这些反馈优化本次教案，避免重复无效方法）】\n';
+      existingPlan.feedback.forEach((fb, i) => {
+        feedbackHistory += (i + 1) + '. [' + fb.date + '] ' + fb.content + '\n';
+      });
+    }
+
+    const prompt = '你是一位资深的苏州小学家教老师，精通苏教版语文、苏教版数学和译林版英语（三年级起）。请根据以下学生的学情评估结果，生成一份个性化教学方案。\n\n注意：该学生每周仅有1节课（约1.5~2小时），请据此合理安排重点，不要贪多。\n\n【学生信息】\n姓名：' + student.childName + '\n年级：' + grade + '\n学校：' + (student.school || '未填写') + '\n家长期望：' + (student.parentGoal || '未填写') + '\n\n【语文评估（苏教版）】\n' + cnText + '\n\n【数学评估（苏教版）】\n' + mtText + '\n\n【英语评估（译林版）】\n' + enText + '\n\n【学习习惯与个性】\n' + hbText + '\n' + feedbackHistory + '\n请以 JSON 格式返回教学方案，不要包含 markdown 代码块标记，直接返回纯 JSON：\n\n{\n  "analysis": {\n    "strengths": ["优势1", "优势2"],\n    "weaknesses": ["薄弱点1", "薄弱点2"],\n    "learningStyle": "学生的学习风格描述（30字以内）",\n    "overallAssessment": "综合评估（80字以内）"\n  },\n  "goals": [\n    { "title": "短期/中期目标", "priority": "high|medium|low", "status": "pending" }\n  ],\n  "modules": [\n    {\n      "subject": "语文|数学|英语",\n      "title": "模块名称",\n      "focus": "重点内容",\n      "exercises": "推荐练习形式",\n      "practiceProblems": ["具体题目1（含答案）", "具体题目2（含答案）"],\n      "sessionFocus": "本节课重点分配的模块及时间（如：数学40分钟、语文30分钟等）",\n      "tips": "教学注意事项"\n    }\n  ],\n  "suggestedSchedule": "本节课教学流程安排建议（含导入、新授、练习、总结各环节，60字以内）",\n  "parentAdvice": "给家长的家庭辅导建议（50字以内）",\n  "parentTasks": ["家庭小任务1（具体可执行）", "家庭小任务2"]\n}';
+
+    const completion = await fetch(DEEPSEEK_BASE_URL + '/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + DEEPSEEK_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: '你是一位专业的苏州小学家教老师，擅长根据学情评估和历史反馈生成个性化教学方案。每个教学模块都要包含具体可执行的练习题（5题左右，含答案）。请严格按 JSON 格式返回结果。' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 5000
+      })
+    });
+
+    if (!completion.ok) throw new Error('AI 服务调用失败');
+
+    const data = await completion.json();
+    const raw = data.choices[0].message.content.trim();
+    const clean = raw.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```$/i, '');
+    const aiResult = JSON.parse(clean);
+
+    const radar = getRadarData(student);
+    const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+
+    const planData = {
+      id: Date.now(),
+      studentId: student.id,
+      studentName: student.childName,
+      studentGrade: student.childGrade,
+      studentSchool: student.school || '',
+      parentGoal: student.parentGoal || '',
+      radar: radar,
+      ...aiResult,
+      feedback: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (existingPlan) {
+      planData.id = existingPlan.id;
+      planData.feedback = existingPlan.feedback || [];
+      planData.createdAt = existingPlan.createdAt;
+      const { error: upErr } = await sb.from('plans').update(planData).eq('id', existingPlan.id);
+      if (upErr) throw upErr;
+    } else {
+      const { error: insErr } = await sb.from('plans').insert([planData]);
+      if (insErr) throw insErr;
+    }
+
+    currentPlan = planData;
+    const { data: plansData } = await sb.from('plans').select('*');
+    plans = plansData || [];
+    document.getElementById('total-plans').textContent = plans.length;
+    renderStudentList();
+    renderDetail();
+    toast('✅ AI 教案生成成功！', 'success');
+  } catch (e) {
+    toast('❌ ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '🤖 AI 生成个性化教案'; }
+  }
+}
+
+async function savePlan() {
+  try {
+    const { error } = await sb.from('plans').update({
+      goals: currentPlan.goals,
+      modules: currentPlan.modules,
+      analysis: currentPlan.analysis,
+      suggestedSchedule: currentPlan.suggestedSchedule,
+      parentAdvice: currentPlan.parentAdvice,
+      parentTasks: currentPlan.parentTasks,
+      updatedAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+    }).eq('id', currentPlan.id);
+    if (error) throw error;
+    currentPlan.updatedAt = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+    const { data: plansData } = await sb.from('plans').select('*');
+    plans = plansData || [];
+    toast('✅ 教案已保存', 'success');
+  } catch (e) { toast('❌ 无法连接数据库，请检查网络', 'error'); }
+}
+
+function toggleGoal(i) {
+  const goals = [...currentPlan.goals];
+  const statuses = ['pending', 'in_progress', 'completed'];
+  const idx = statuses.indexOf(goals[i].status);
+  goals[i].status = statuses[(idx + 1) % 3];
+  currentPlan.goals = goals;
+  renderPlanTabs(currentPlan);
+}
+function addGoal() {
+  if (!currentPlan.goals) currentPlan.goals = [];
+  currentPlan.goals.push({ title: '新目标', priority: 'medium', status: 'pending' });
+  renderPlanTabs(currentPlan);
+}
+function editGoal(i) {
+  const goalEl = document.getElementById('goal-'+i);
+  const g = currentPlan.goals[i];
+  goalEl.querySelector('.goal-content').innerHTML = `<input value="${g.title}" onchange="currentPlan.goals[${i}].title=this.value" placeholder="目标描述">`;
+}
+function deleteGoal(i) {
+  currentPlan.goals.splice(i, 1);
+  renderPlanTabs(currentPlan);
+}
+async function addFeedback() {
+  const input = document.getElementById('fb-input');
+  const content = input.value.trim();
+  if (!content) return;
+  if (!currentPlan.feedback) currentPlan.feedback = [];
+  currentPlan.feedback.push({
+    date: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+    content,
+  });
+  try {
+    const { error } = await sb.from('plans').update({
+      feedback: currentPlan.feedback,
+      updatedAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+    }).eq('id', currentPlan.id);
+    if (error) throw error;
+    input.value = '';
+    const { data: plansData } = await sb.from('plans').select('*');
+    plans = plansData || [];
+    renderPlanTabs(currentPlan);
+    toast('✅ 反馈已保存（下次AI会参考）', 'success');
+  } catch (e) { toast('❌ 无法连接数据库，请检查网络', 'error'); }
+}
+
+
+// ── Share Report ──
+function shareReport() {
+  const sid = currentStudent ? currentStudent.id : currentPlan ? currentPlan.studentId : null;
+  if (!sid) { toast('⚠️ 请先选择学生', 'error'); return; }
+  const url = window.location.origin + '/report?id=' + sid;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      toast('📋 报告链接已复制！发给家长即可', 'success');
+    }).catch(() => toast(url, 'success'));
+  } else {
+    prompt('复制此链接发给家长：', url);
+  }
+}
+
+
+// ── Agent ──
+let agentState = { autoMode: false, notifications: [], newStudents: [] };
+
+async function loadAgent() {
+  try {
+    const { data, error } = await sb.from('agent').select('*').limit(1);
+    if (error) throw error;
+    if (data && data.length > 0) {
+      agentState = data[0];
+    }
+    document.getElementById('agent-switch').checked = agentState.autoMode;
+    document.getElementById('agent-status-text').textContent = agentState.autoMode ? '🟢 运行中' : '关闭';
+    updateNotifBadge();
+  } catch(e) {}
+}
+
+async function toggleAgent() {
+  agentState.autoMode = !agentState.autoMode;
+  try {
+    const { error } = await sb.from('agent').upsert([{
+      id: agentState.id || 1,
+      autoMode: agentState.autoMode,
+      notifications: agentState.notifications || [],
+      lastCheck: agentState.lastCheck || null
+    }]);
+    if (error) throw error;
+    document.getElementById('agent-status-text').textContent = agentState.autoMode ? '🟢 运行中' : '关闭';
+    document.getElementById('agent-switch').checked = agentState.autoMode;
+    toast(agentState.autoMode ? '🤖 智能体已开启，自动检测新学生' : '🔴 智能体已关闭', agentState.autoMode ? 'success' : '');
+  } catch(e) {
+    toast('❌ 无法连接数据库，请检查网络', 'error');
+  }
+}
+
+function updateNotifBadge() {
+  const unread = (agentState.notifications||[]).filter(n => !n.read).length;
+  const el = document.getElementById('notif-count');
+  if (unread > 0) { el.style.display = 'flex'; el.textContent = unread; }
+  else { el.style.display = 'none'; }
+}
+
+function openNotifications() {
+  document.getElementById('notif-panel').classList.add('open');
+  document.getElementById('notif-overlay').classList.add('show');
+  renderNotifications();
+}
+function closeNotifications() {
+  document.getElementById('notif-panel').classList.remove('open');
+  document.getElementById('notif-overlay').classList.remove('show');
+}
+function renderNotifications() {
+  const list = document.getElementById('notif-list');
+  const ns = agentState.notifications || [];
+  if (!ns.length) { list.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;text-align:center;padding:20px;">暂无通知</div>'; return; }
+  list.innerHTML = ns.map(n => `
+    <div class="notif-item ${n.read?'read':'unread'}" onclick="goToStudent(${n.studentId})">
+      <div style="font-weight:600;">${n.type==='new_student'?'🆕':'📋'} ${n.studentName}</div>
+      <div>${n.message}</div>
+      <div class="notif-time">${n.time}</div>
+    </div>
+  `).join('');
+}
+function goToStudent(id) { closeNotifications(); selectStudent(id); }
+async function markAllRead() {
+  if (agentState.notifications) {
+    agentState.notifications.forEach(n => n.read = true);
+  }
+  try {
+    await sb.from('agent').upsert([{
+      id: agentState.id || 1,
+      autoMode: agentState.autoMode,
+      notifications: agentState.notifications || [],
+      lastCheck: agentState.lastCheck || null
+    }]);
+  } catch(e) {}
+  renderNotifications();
+  updateNotifBadge();
+}
+
+// Poll agent status every 30s
+setInterval(async () => {
+  if (document.hidden) return;
+  try {
+    const { data } = await sb.from('agent').select('*').limit(1);
+    if (data && data.length > 0) agentState = data[0];
+    updateNotifBadge();
+  } catch(e){}
+}, 30000);
+
+
+loadAll();
+loadAgent();
+
+</script>
+
+<div class="notif-overlay" id="notif-overlay" onclick="closeNotifications()"></div>
+<div class="notif-panel" id="notif-panel">
+  <h3>🔔 智能体通知 <button class="btn btn-sm btn-outline" onclick="markAllRead()">全部已读</button></h3>
+  <div id="notif-list"></div>
+</div>
+
+</body>
+</html>
