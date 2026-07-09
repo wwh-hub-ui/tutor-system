@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学情报告 · 家教二</title>
+<style>
+:root {
+  --primary: #6366F1; --success: #10B981; --warning: #F59E0B;
+  --bg: #F8FAFC; --card: #FFFFFF; --text: #1E293B;
+  --text-secondary: #64748B; --border: #E2E8F0;
+  --radius: 16px; --shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.container{max-width:640px;margin:0 auto;padding:24px 16px;}
+.header{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;padding:28px 24px;border-radius:var(--radius);margin-bottom:20px;text-align:center;}
+.header h1{font-size:22px;font-weight:700;}
+.header .grade{font-size:14px;opacity:0.85;margin-top:4px;}
+.header .school{font-size:12px;opacity:0.7;margin-top:2px;}
+
+.card{background:var(--card);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+/* Radar */
+.radar-container{display:flex;justify-content:center;padding:12px;}
+.radar-box{width:200px;height:200px;position:relative;}
+.radar-label{font-size:10px;color:var(--text-secondary);font-weight:600;position:absolute;}
+.rl-top{top:0;left:50%;transform:translateX(-50%);}
+.rl-right{right:-8px;top:50%;transform:translateY(-50%);}
+.rl-bottom{bottom:0;left:50%;transform:translateX(-50%);}
+.rl-left{left:-8px;top:50%;transform:translateY(-50%);}
+
+/* Goals */
+.goal-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F8FAFC;border-radius:10px;margin-bottom:6px;}
+.goal-item .icon{font-size:18px;flex-shrink:0;}
+.goal-item .text{font-size:14px;flex:1;}
+.goal-item .text.done{text-decoration:line-through;color:var(--text-secondary);}
+.goal-pct{text-align:center;margin:12px 0;font-size:14px;color:var(--primary);font-weight:600;}
+.goal-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:16px;}
+.goal-bar .fill{height:100%;background:var(--primary);border-radius:4px;transition:width 0.5s;}
+
+/* Modules */
+.module-item{padding:12px;background:#F8FAFC;border-radius:10px;margin-bottom:8px;border-left:3px solid var(--primary);}
+.module-item .m-title{font-size:14px;font-weight:600;margin-bottom:4px;}
+.module-item .m-detail{font-size:12px;color:var(--text-secondary);line-height:1.6;}
+
+/* Tasks */
+.parent-task{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;margin-bottom:8px;background:#F0FDF4;border-radius:10px;border:1px solid #BBF7D0;font-size:14px;line-height:1.6;}
+.parent-task .num{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--success);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+.advice-box{font-size:14px;line-height:1.7;padding:14px;background:#FEF3C7;border-radius:10px;color:#92400E;}
+
+/* Strengths / Weaknesses */
+.tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;margin:2px;}
+.tag.strength{background:#D1FAE5;color:#065F46;}
+.tag.weakness{background:#FEE2E2;color:#991B1B;}
+
+/* Footer */
+.footer{text-align:center;padding:20px;color:var(--text-secondary);font-size:12px;}
+
+/* Loading / Error */
+.loading{text-align:center;padding:60px 20px;color:var(--text-secondary);}
+.loading .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.error-state{text-align:center;padding:60px 20px;color:var(--danger);}
+.error-state .icon{font-size:48px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>正在加载学情报告…</p>
+  </div>
+</div>
+<script>
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if (!id) {
+    document.getElementById('app').innerHTML = '<div class="error-state"><div class="icon">❌</div><p>缺少学生 ID 参数</p></div>';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/report/' + id);
+    if (!res.ok) throw new Error('加载失败');
+    const data = await res.json();
+    render(data);
+  } catch(e) {
+    document.getElementById('app').innerHTML = '<div class="error-state"><div class="icon">😞</div><p>' + e.message + '</p></div>';
+  }
+})();
+
+function render(data) {
+  const s = data.student;
+  const p = data.plan;
+
+  // ── Header ──
+  let html = `
+  <div class="header">
+    <h1>📊 ${s.name} 的学情报告</h1>
+    <div class="grade">${s.grade}${s.school ? ' · ' + s.school : ''}</div>
+    ${s.parentGoal ? '<div class="school">家长期望：' + s.parentGoal + '</div>' : ''}
+  </div>`;
+
+  // ── Radar ──
+  html += `<div class="card"><h3>🎯 能力画像</h3>`;
+  html += drawRadar(s.radar);
+  html += `</div>`;
+
+  if (!p) {
+    html += `<div class="card" style="text-align:center;padding:40px;color:var(--text-secondary);">
+      <div style="font-size:48px;margin-bottom:12px;">📋</div>
+      <p>老师还没有生成教学方案，请耐心等待~</p>
+    </div>`;
+    document.getElementById('app').innerHTML = html;
+    return;
+  }
+
+  // ── Strengths & Weaknesses ──
+  const a = p.analysis || {};
+  html += `<div class="card"><h3>📊 学情分析</h3>`;
+  html += `<div style="margin-bottom:8px;"><strong>✅ 优势</strong><br>${(a.strengths||[]).map(t=>`<span class="tag strength">${t}</span>`).join('')}</div>`;
+  html += `<div><strong>⚠️ 需要加强</strong><br>${(a.weaknesses||[]).map(t=>`<span class="tag weakness">${t}</span>`).join('')}</div>`;
+  if (a.overallAssessment) html += `<div style="margin-top:12px;font-size:13px;color:var(--text-secondary);">${a.overallAssessment}</div>`;
+  html += `</div>`;
+
+  // ── Goals ──
+  const goalsDone = p.goals ? p.goals.filter(g => g.status === 'completed').length : 0;
+  const goalsTotal = p.goals ? p.goals.length : 0;
+  const pct = goalsTotal ? Math.round(goalsDone/goalsTotal*100) : 0;
+  html += `<div class="card"><h3>🎯 学习目标进度</h3>`;
+  html += `<div class="goal-pct">已完成 ${goalsDone}/${goalsTotal}（${pct}%）</div>`;
+  html += `<div class="goal-bar"><div class="fill" style="width:${pct}%"></div></div>`;
+  if (p.goals) {
+    p.goals.forEach(g => {
+      const icon = g.status === 'completed' ? '✅' : g.status === 'in_progress' ? '🔄' : '⏳';
+      const dc = g.status === 'completed' ? ' done' : '';
+      html += `<div class="goal-item"><span class="icon">${icon}</span><span class="text${dc}">${g.title}</span></div>`;
+    });
+  }
+  html += `</div>`;
+
+  // ── Modules ──
+  html += `<div class="card"><h3>📚 当前教学重点</h3>`;
+  if (p.modules && p.modules.length) {
+    p.modules.forEach(m => {
+      html += `<div class="module-item"><div class="m-title">📖 ${m.title}</div><div class="m-detail">${m.focus||''}</div></div>`;
+    });
+  } else { html += '<div style="color:var(--text-secondary);font-size:13px;">暂无</div>'; }
+  html += `</div>`;
+
+  // ── Parent Tasks ──
+  html += `<div class="card"><h3>🏠 家长协作任务</h3>`;
+  if (p.parentTasks && p.parentTasks.length) {
+    html += `<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">每周一节课时间有限，以下是建议家长在课后协助的小任务：</div>`;
+    html += p.parentTasks.map((t,i) => `<div class="parent-task"><span class="num">${i+1}</span><span>${t}</span></div>`).join('');
+  } else {
+    html += '<div style="color:var(--text-secondary);font-size:13px;">暂无特殊任务安排</div>';
+  }
+  html += `</div>`;
+
+  // ── Schedule ──
+  if (p.suggestedSchedule) {
+    html += `<div class="card"><h3>📅 课堂安排</h3><div class="advice-box">${p.suggestedSchedule}</div></div>`;
+  }
+
+  // ── Parent Advice ──
+  if (p.parentAdvice) {
+    html += `<div class="card"><h3>💡 老师建议</h3><div class="advice-box">${p.parentAdvice}</div></div>`;
+  }
+
+  // ── Footer ──
+  html += `<div class="footer">最后更新：${p.updatedAt}<br>由 家教二 · AI教案系统 生成</div>`;
+
+  document.getElementById('app').innerHTML = html;
+}
+
+function drawRadar(scores) {
+  if (!scores) return '<div style="text-align:center;color:var(--text-secondary);font-size:13px;padding:20px;">暂无数据</div>';
+  const cx=100, cy=100, r=80, levels=4;
+  const labels=['语文','数学','英语','习惯'];
+  const vals=[scores.chinese||0,scores.math||0,scores.english||0,scores.habits||0].map(v=>Math.max(5,v/5));
+  let svg=`<div class="radar-container"><svg width="200" height="200" viewBox="0 0 200 200">`;
+  for(let l=1;l<=levels;l++){
+    const pts=[];
+    for(let i=0;i<4;i++){
+      const a=(-Math.PI/2)+(i*Math.PI*2/4);
+      pts.push(`${cx+Math.cos(a)*r*l/levels},${cy+Math.sin(a)*r*l/levels}`);
+    }
+    svg+=`<polygon points="${pts.join(' ')}" fill="none" stroke="#E2E8F0" stroke-width="1"/>`;
+  }
+  for(let i=0;i<4;i++){
+    const a=(-Math.PI/2)+(i*Math.PI*2/4);
+    svg+=`<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(a)*r}" y2="${cy+Math.sin(a)*r}" stroke="#E2E8F0" stroke-width="1"/>`;
+  }
+  const dataPts=[];
+  for(let i=0;i<4;i++){
+    const a=(-Math.PI/2)+(i*Math.PI*2/4);
+    dataPts.push(`${cx+Math.cos(a)*r*vals[i]/20},${cy+Math.sin(a)*r*vals[i]/20}`);
+  }
+  svg+=`<polygon points="${dataPts.join(' ')}" fill="rgba(99,102,241,0.2)" stroke="#6366F1" stroke-width="2"/>`;
+  for(let i=0;i<4;i++){
+    const a=(-Math.PI/2)+(i*Math.PI*2/4);
+    const px=cx+Math.cos(a)*r*vals[i]/20, py=cy+Math.sin(a)*r*vals[i]/20;
+    svg+=`<circle cx="${px}" cy="${py}" r="4" fill="#6366F1"/>`;
+  }
+  svg+=`</svg></div>`;
+
+  return `<div style="position:relative;display:flex;justify-content:center;">
+    <div style="position:relative;width:200px;height:200px;">
+      ${svg}
+      <div class="radar-label rl-top">语文<br><span style="font-size:12px;color:#6366F1">${(vals[0]).toFixed(0)}</span></div>
+      <div class="radar-label rl-right">数学<br><span style="font-size:12px;color:#6366F1">${(vals[1]).toFixed(0)}</span></div>
+      <div class="radar-label rl-bottom">英语<br><span style="font-size:12px;color:#6366F1">${(vals[2]).toFixed(0)}</span></div>
+      <div class="radar-label rl-left">习惯<br><span style="font-size:12px;color:#6366F1">${(vals[3]).toFixed(0)}</span></div>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
