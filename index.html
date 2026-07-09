@@ -3,58 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>家教管理系统</title>
+<title>学情评估问卷</title>
 <style>
-:root{--primary:#4F6EF7;--bg:#F5F6FA;--card:#fff;--text:#1C1C1E;--sub:#6E6E73;--radius:16px;--shadow:0 2px 12px rgba(0,0,0,0.06);--green:#34C759}
+:root{--primary:#4F6EF7;--primary-light:#EEF1FE;--success:#34C759;--danger:#FF3B30;--bg:#F5F6FA;--card:#FFFFFF;--text:#1C1C1E;--text-secondary:#6E6E73;--border:#E5E5EA;--radius:16px;--shadow:0 2px 12px rgba(0,0,0,0.06)}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.container{max-width:500px;width:100%}
-.header{text-align:center;margin-bottom:32px}
-.header h1{font-size:28px;color:var(--primary);margin-bottom:8px}
-.header p{color:var(--sub);font-size:14px}
-.section-title{font-size:13px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;margin-top:10px}
-.card{background:var(--card);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow);text-decoration:none;display:block;color:var(--text);transition:transform 0.2s,box-shadow 0.2s;cursor:pointer}
-.card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-.card.parent{border-left:4px solid var(--green)}
-.card.teacher{border-left:4px solid var(--primary)}
-.card .icon{font-size:32px;margin-bottom:12px}
-.card h2{font-size:18px;margin-bottom:4px}
-.card p{color:var(--sub);font-size:13px;line-height:1.5}
-.card .badge{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#EEF1FE;color:var(--primary)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:720px;margin:0 auto;padding:20px 16px 80px}
+.header{background:var(--primary);color:#fff;padding:24px 20px;border-radius:var(--radius);margin-bottom:20px;position:relative;overflow:hidden}
+.header h1{font-size:22px;font-weight:700}
+.header p{font-size:14px;opacity:0.85;margin-top:4px}
+.header::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:rgba(255,255,255,0.1);border-radius:50%}
+.card{background:var(--card);border-radius:var(--radius);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h2{font-size:18px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card .subtitle{color:var(--text-secondary);font-size:13px;margin-bottom:20px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.form-group label .required{color:var(--danger);margin-left:2px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;transition:border-color 0.2s;background:#FAFAFA}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);background:#fff}
+.form-group textarea{min-height:80px;resize:vertical}
+.option-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.option-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;background:#FAFAFA}
+.option-item:hover{border-color:var(--primary);background:var(--primary-light)}
+.option-item.selected{border-color:var(--primary);background:var(--primary-light)}
+.option-item input[type="radio"]{accent-color:var(--primary);width:18px;height:18px}
+.option-item .opt-label{flex:1;font-size:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:14px 28px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-primary{background:var(--primary);color:#fff;width:100%}
+.btn-primary:hover{background:#3D5CE5;transform:translateY(-1px)}
+.btn-primary:disabled{background:#A5B4FC;cursor:not-allowed;transform:none}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:14px 24px;border-radius:12px;color:#fff;font-weight:600;font-size:14px;z-index:1000;opacity:0;transition:opacity 0.3s}
+.toast.show{opacity:1}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+@media(max-width:480px){.container{padding:12px 10px 60px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
 <div class="header">
-<h1>📚 家教管理系统</h1>
-<p>苏州小学 · 课外辅导智能工具集</p>
+<h1>📚 学情评估问卷</h1>
+<p>苏州·小学1~4年级 · 苏教版/译林版 · 请如实填写，方便老师针对性备课</p>
 </div>
-<div class="section-title">👨‍👩‍👧 家长入口</div>
-<a href="家教/public/parent.html" class="card parent">
-<div class="icon">📝</div>
-<h2>学情评估问卷</h2>
-<p>请填写孩子的学情信息，帮助老师提前备课</p>
-<span class="badge" style="background:#D1FAE5;color:#065F46;">仅限评估</span>
-</a>
-<div class="section-title">👩‍🏫 教师入口</div>
-<a href="家教/public/index.html" class="card teacher">
-<div class="icon">📋</div>
-<h2>预评估系统</h2>
-<p>查看家长提交的评估结果，按年级筛选</p>
-<span class="badge">教师专用</span>
-</a>
-<a href="家教二/public/index.html" class="card teacher">
-<div class="icon">🤖</div>
-<h2>教学管理</h2>
-<p>AI 生成个性化教案、教学反馈、智能提醒</p>
-<span class="badge">教师专用</span>
-</a>
-<a href="家教三/public/index.html" class="card teacher">
-<div class="icon">💰</div>
-<h2>财务中心</h2>
-<p>收支记录、储蓄目标、AI 周报总结与财富日记</p>
-<span class="badge">教师专用</span>
-</a>
+<form id="eval-form" onsubmit="submitForm(event)">
+<div class="card" id="step-basic">
+<h2>👤 基本信息</h2>
+<p class="subtitle">请填写孩子的姓名和年级</p>
+<div class="form-group"><label>孩子姓名 <span class="required">*</span></label><input type="text" id="childName" placeholder="请输入孩子的姓名" required></div>
+<div class="form-group"><label>就读年级 <span class="required">*</span></label><select id="childGrade" required onchange="onGradeChange()"><option value="">请选择年级</option><option value="1">一年级</option><option value="2">二年级</option><option value="3">三年级</option><option value="4">四年级</option></select></div>
+<div class="form-group"><label>所在学校（选填）</label><input type="text" id="school" placeholder="如：苏州市实验小学"></div>
+<div class="form-group"><label>家长期望 / 补习诉求</label><textarea id="parentGoal" placeholder="比如：希望重点补数学应用题、提高语文作文水平……"></textarea></div>
 </div>
+<div class="card" id="step-chinese"><h2>📖 语文能力评估（苏教版）</h2><p class="subtitle">了解孩子在拼音、识字、阅读、写作方面的基础</p><div id="chinese-questions"></div></div>
+<div class="card" id="step-math"><h2>🧮 数学能力评估（苏教版）</h2><p class="subtitle">了解孩子在计算、应用、思维方面的水平</p><div id="math-questions"></div></div>
+<div class="card" id="step-english" style="display:none"><h2>🔤 英语能力评估（译林版）</h2><p class="subtitle">三年级起开设英语，了解基础水平</p><div id="english-questions"></div></div>
+<div class="card" id="step-habits"><h2>🎯 学习习惯与个性</h2><p class="subtitle">帮助老师了解孩子的学习风格</p><div id="habits-questions"></div></div>
+<button type="submit" class="btn btn-primary" id="submit-btn">✅ 提交评估问卷</button>
+<p style="text-align:center;margin-top:8px;font-size:12px;color:var(--text-secondary)">提交后老师即可实时查看，提前备课</p>
+</form>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var SUPABASE_URL='https://btjjgxttyfpgdyfccwpm.supabase.co',SUPABASE_KEY='sb_publishable_hNfQ1CvrMDToIo1y_V2quA_1cj8i2Vk',sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var C={"1":[{id:"cn1",q:"拼音掌握程度：孩子目前能独立拼读两拼音节（如 b-a→ba）吗？",opts:["完全不会","只会单韵母","会两拼但不太熟","基本掌握","熟练拼读"]},{id:"cn2",q:"汉字认读量：大约认识多少个汉字？",opts:["50个以下","50-100个","100-200个","200-300个","300个以上"]},{id:"cn3",q:"书写能力：能否正确书写基本笔画（横、竖、撇、捺、点）？",opts:["完全不会","能写2-3种","能写大部分","全部掌握并工整"]},{id:"cn4",q:"课文朗读：能否较流利地朗读一年级课文（如《小小的船》）？",opts:["基本不会读","逐字指读很慢","能读但不够流利","比较流利","非常流利有感情"]}],"2":[{id:"cn1",q:"拼音熟练度：能否借助拼音独立阅读带注音的短文？",opts:["完全不会拼","拼读很慢","基本能拼但慢","比较熟练","非常熟练"]},{id:"cn2",q:"汉字书写：能否正确书写二年级要求的大部分生字？",opts:["很多不会写","会写简单字","基本能写","大部分能写","全部能写且工整"]},{id:"cn3",q:"阅读理解：读完一篇200字左右的短文后，能否回答基本问题？",opts:["完全不能","能答部分","基本能答","能准确回答","理解深刻能复述"]},{id:"cn4",q:"看图写话：能否根据图片写出2-3句通顺的话？",opts:["完全不会","只能写词","能写1-2句","能写3句以上","写得生动有条理"]}],"3":[{id:"cn1",q:"阅读速度与理解：能否在10分钟内读完一篇300字短文并把握主要内容？",opts:["非常困难","勉强读完但理解差","基本能完成","较快且理解不错","快速且理解深刻"]},{id:"cn2",q:"作文基础：能否独立完成200字左右的记叙文（如写一件事）？",opts:["完全不会","需要大量帮助","能写但语句不通","基本能独立完成","写得流畅有条理"]},{id:"cn3",q:"古诗文积累：能背诵多少首课内古诗？",opts:["0-2首","3-5首","6-10首","10-15首","15首以上且理解意思"]},{id:"cn4",q:"词语运用：能否正确使用成语或四字词语？",opts:["完全不会","偶尔用对","能主动使用","用得比较准确","丰富且准确"]}],"4":[{id:"cn1",q:"阅读深度：读完一篇400字文章后，能否概括段落大意和中心思想？",opts:["完全不能","能说大概","能概括段落","能抓中心思想","分析能力强"]},{id:"cn2",q:"作文水平：能否独立完成300-400字的命题作文，结构完整？",opts:["非常困难","能写但不足200字","基本完成但平淡","结构完整语句通顺","内容充实有亮点"]},{id:"cn3",q:"修辞手法：能否识别并运用比喻、拟人等基本修辞手法？",opts:["完全不会","能识别但不会用","偶尔会用","能识别并尝试运用","运用自如"]},{id:"cn4",q:"综合语文素养：孩子的语文成绩在班级中的位置？",opts:["明显落后","中等偏下","中等","中等偏上","名列前茅"]}]};
+var M={"1":[{id:"mt1",q:"数数能力：能否正确从1数到100？",opts:["不会","能数到10","能数到20","能数到50","能数到100+"]},{id:"mt2",q:"20以内加减法：如 8+7=？15-9=？能否快速口算？",opts:["完全不会","需要数手指","会但不熟练","基本熟练","快速准确"]},{id:"mt3",q:"图形认知：能否辨认长方形、正方形、三角形、圆形？",opts:["都不认识","认识1-2种","认识3种","全部认识","认识且能描述特征"]},{id:"mt4",q:"比较与排序：能否比较物体的大小、长短、多少？",opts:["完全不会","只能比大小","基本能比较","准确比较","理解且能表达"]}],"2":[{id:"mt1",q:"乘法口诀：九九乘法表的掌握情况？",opts:["完全不会","会1-3的口诀","会1-6的口诀","基本能背","滚瓜烂熟"]},{id:"mt2",q:"100以内加减法竖式计算：如 47+38=？83-56=？",opts:["完全不会","会加不会减","会但易错","基本正确","又快又准"]},{id:"mt3",q:"长度单位：能否区分厘米和米，进行简单的测量和换算？",opts:["完全不懂","知道名称","会用尺子量","能换算","灵活运用"]},{id:"mt4",q:"应用题理解：读一道两步计算的应用题，能否正确列式？",opts:["完全不会","需要解释很多遍","提示后能做","基本独立完成","轻松解决"]}],"3":[{id:"mt1",q:"万以内加减法：如 2356+4879=？7021-3856=？（竖式计算）",opts:["不会","进位/退位常错","偶尔出错","基本正确","完全掌握"]},{id:"mt2",q:"多位数乘一位数：如 328×7=？",opts:["完全不会","会但不熟","基本能算对","熟练准确","非常快"]},{id:"mt3",q:"分数初步：能否理解 1/2、1/4 的含义并进行简单比较？",opts:["完全不懂","知道概念","能比较同分母","基本理解","完全掌握"]},{id:"mt4",q:"周长与面积概念：能否计算长方形、正方形的周长？",opts:["完全不会","知道公式但代错","基本能算对","熟练计算","灵活运用"]}],"4":[{id:"mt1",q:"大数认识：能否正确读写亿以内的数（如 3050 万、2 亿）？",opts:["完全不会","读数困难","基本会读写","熟练","非常熟练"]},{id:"mt2",q:"三位数乘两位数：如 328×47=？",opts:["完全不会","方法会但计算错","偶尔出错","准确率高","又快又准"]},{id:"mt3",q:"复杂应用题：三步以上的应用题，能否分析并解答？",opts:["完全不会","需要大量引导","提示后能做","基本独立完成","思路清晰"]},{id:"mt4",q:"角度与统计：能否用量角器量角，读懂简单的条形统计图？",opts:["完全不会","一种会另一种不会","基本掌握","掌握不错","非常熟练"]}]};
+var E={"3":[{id:"en1",q:"字母与拼读：能否认读26个英文字母并了解基本发音？",opts:["完全不会","认识部分字母","认识全部字母","会字母发音","能拼读简单单词"]},{id:"en2",q:"词汇量：大约掌握多少个英文单词？（课内要求约100词）",opts:["10个以下","10-30个","30-60个","60-100个","100个以上"]},{id:"en3",q:"简单对话：能否进行简单的自我介绍（姓名、年龄、喜好）？",opts:["完全不能","能说1-2句","能说但不流利","基本能对话","流利表达"]}],"4":[{id:"en1",q:"词汇积累：课内+课外大约掌握多少英文词汇？",opts:["50个以下","50-100个","100-200个","200-300个","300个以上"]},{id:"en2",q:"句型运用：能否正确使用 There be、Can you...? 等常用句型？",opts:["完全不会","只会简单句","基本能运用","比较熟练","灵活切换"]},{id:"en3",q:"短文阅读：能否读懂50词左右的英文小短文，并回答简单问题？",opts:["完全不能","能懂部分词","基本读懂","理解较好","轻松阅读"]}]};
+var H=[{id:"hb1",q:"专注力：孩子在家独立学习时，能持续专注多长时间？",opts:["不到5分钟","5-10分钟","10-20分钟","20-30分钟","30分钟以上"]},{id:"hb2",q:"作业习惯：孩子平时能自觉完成作业吗？",opts:["完全不自觉","需要经常催促","提醒后会做","基本自觉","非常自觉"]},{id:"hb3",q:"学习兴趣：孩子对学习的态度是怎样的？",opts:["很抵触","不太喜欢","一般","比较喜欢","非常喜欢"]},{id:"hb4",q:"薄弱科目（家长主观判断）：哪科最需要加强？",opts:["语文","数学","英语","多科都需要","说不准"]},{id:"hb5",q:"性格特点：孩子在学习中更符合哪种描述？",opts:["胆小不敢问","容易分心坐不住","认真但效率低","积极主动","自信好强"]}];
+function rQ(cid,qs){var c=document.getElementById(cid),h='';qs.forEach(function(it,i){h+='<div class="form-group"><label>'+(i+1)+'. '+it.q+' <span class="required">*</span></label><div class="option-grid">';it.opts.forEach(function(o){h+='<label class="option-item" data-qid="'+it.id+'" data-val="'+o+'"><input type="radio" name="'+it.id+'" value="'+o+'" required><span class="opt-label">'+o+'</span></label>'});h+='</div></div>'});c.innerHTML=h;c.querySelectorAll('.option-item').forEach(function(it){it.addEventListener('click',function(){var p=this.parentElement;p.querySelectorAll('.option-item').forEach(function(s){s.classList.remove('selected')});this.classList.add('selected');this.querySelector('input[type="radio"]').checked=true})})}
+function rH(){var c=document.getElementById('habits-questions'),h='';H.forEach(function(it,i){h+='<div class="form-group"><label>'+(i+1)+'. '+it.q+' <span class="required">*</span></label><div class="option-grid">';it.opts.forEach(function(o){h+='<label class="option-item" data-qid="'+it.id+'" data-val="'+o+'"><input type="radio" name="'+it.id+'" value="'+o+'" required><span class="opt-label">'+o+'</span></label>'});h+='</div></div>'});c.innerHTML=h;c.querySelectorAll('.option-item').forEach(function(it){it.addEventListener('click',function(){var p=this.parentElement;p.querySelectorAll('.option-item').forEach(function(s){s.classList.remove('selected')});this.classList.add('selected');this.querySelector('input[type="radio"]').checked=true})})}
+function onGradeChange(){var g=document.getElementById('childGrade').value;if(!g)return;rQ('chinese-questions',C[g]);rQ('math-questions',M[g]);var ec=document.getElementById('step-english');if(g>=3){ec.style.display='';rQ('english-questions',E[g])}else{ec.style.display='none'}}
+function submitForm(e){e.preventDefault();var cn=document.getElementById('childName').value.trim();var cg=document.getElementById('childGrade').value;var sc=document.getElementById('school').value.trim();var pg=document.getElementById('parentGoal').value.trim();if(!cn||!cg){showToast('请填写孩子姓名和年级','error');return}var ans={};document.querySelectorAll('#eval-form input[type="radio"]:checked').forEach(function(r){ans[r.name]=r.value});var g=parseInt(cg);var eks=[];C[g].forEach(function(q){eks.push(q.id)});M[g].forEach(function(q){eks.push(q.id)});if(g>=3)E[g].forEach(function(q){eks.push(q.id)});H.forEach(function(q){eks.push(q.id)});var ms=eks.filter(function(k){return !ans[k]});if(ms.length>0){showToast('还有 '+ms.length+' 题未作答，请完成所有题目','error');return}var sub={id:Date.now(),childName:cn,childGrade:parseInt(cg),school:sc,parentGoal:pg,answers:ans,_cq:C[g],_mq:M[g],_eq:g>=3?E[g]:[],_hq:H,timestamp:new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})};var btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='提交中...';sb.from('submissions').insert([sub]).then(function(r){if(r.error)throw r.error;showToast('✅ 提交成功！老师将实时查看并备课','success');document.getElementById('eval-form').reset();document.querySelectorAll('.option-item.selected').forEach(function(s){s.classList.remove('selected')});onGradeChange();window.scrollTo({top:0,behavior:'smooth'})}).catch(function(){showToast('提交失败，请检查网络连接','error')}).finally(function(){btn.disabled=false;btn.textContent='✅ 提交评估问卷'})}
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(function(){t.className='toast'},2500)}
+document.getElementById('childGrade').value='1';onGradeChange();rH();
+</script>
 </body>
 </html>
